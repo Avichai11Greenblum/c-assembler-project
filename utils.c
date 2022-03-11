@@ -90,6 +90,20 @@ int isANaturalNum(char c){
   return 0;
 }
 
+int isAIntNum(char input[]){
+  int i = 0;
+  if(input[0] == '-' || input[0] == '+'){
+    i++;
+  }
+  while(input[i]!='\0'){
+    if (!(isdigit(input[i]))){
+      return 0;
+    }
+    i++;
+  }
+  return 1;
+}
+
 int isACommand(char line []){
   if(!strcmp(line,"mov"))
     return 1;
