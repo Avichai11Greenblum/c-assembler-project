@@ -92,16 +92,32 @@ int isANaturalNum(char c){
 
 int isAIntNum(char input[]){
   int i = 0;
+  int j = giveTheLastNoneWhiteIndex(input);
+  //printf("last not white index->%d@\n", j);
   if(input[0] == '-' || input[0] == '+'){
     i++;
   }
-  while(input[i]!='\0'){
-    if (!(isdigit(input[i]))){
+  while(input[i]!='\0' ){
+    if( i >= j )
+      break;
+
+    if(input[i] == '-' || input[i] == '+'){
+      return 0;
+    }
+    
+    if ( !isdigit(input[i]) ){
       return 0;
     }
     i++;
   }
   return 1;
+}
+
+int isANaturalNum(char c){
+  if(c <= '9' && c>= '0'){
+    return 1;
+  }
+  return 0;
 }
 
 int isACommand(char line []){
@@ -220,10 +236,14 @@ int isANum(char *param)
 
 int giveTheLastNoneWhiteIndex(char line[]){
   int i = 1;
+  int firstiter = 1;
+  if(!isspace(line[strlen(line) - 1])){
+    return strlen(line) - 1;
+  }
   while( !isspace(line[strlen(line) - i ]) ){
     i++;
   }
-  return (strlen(line)-i-1);
+  return (strlen(line)-i-2);
 }
 
 int countWords(char line []){
