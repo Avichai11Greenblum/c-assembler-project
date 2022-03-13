@@ -27,14 +27,14 @@ int validation(FILE *filePtr, LIST *names){
     lineNumber++;
     strcpy(lineCopy, line);
     token = strtok(lineCopy, parse_words);
-    printf("\ line: %d\n", lineNumber);
+    //printf("\ line: %d\n", lineNumber);
     
     /* the limit of 200 lines is for the makinng of the code */
     /* for every word */
     while( token != NULL && lineNumber <= 200 ){
       
-      printf("\ word: %d\n", wordNumber);
-      printf("token = %s\n",token); 
+      //printf("\ word: %d\n", wordNumber);
+      //printf("token = %s\n",token); 
       
       int go = 1;
       if( !wordNumber == 0 )
@@ -61,48 +61,50 @@ int validation(FILE *filePtr, LIST *names){
           go = 0;
           token = strtok(NULL, parse_words);
           wordNumber++;
-          if(wordNumber == 2 && checkForMacroAtSecond(names, token, lineNumber) == 0 && isCurNumOfWords( line, 2) == 0){
+          if(checkForMacroAtSecond(names, token, lineNumber) == 0 || isCurNumOfWords( line, 2) == 0){
             result = 0;
             printf("in line %d: invalid macro\n",lineNumber);
           }
           else{
-            numOfValidMacros--;
+            numOfValidMacros++;
           }
         }
       }
 
       /* endm */
-      if( go && token != NULL){
-        if(!strcmp(token,"endm") && isCurNumOfWords(line,1) == 1  && numOfValidMacros != 0){
-          printf("very good macro\n");
+      if( go && token != NULL && !strcmp(token,"endm")){
+        go = 0;
+        if(isCurNumOfWords(line,1)  && numOfValidMacros != 0){
+          numOfValidMacros--;
+        }
+        else{
+          printf("in line %d: invalid endm\n",lineNumber);
+          result = 0;
         }
       }
       
       /* extern */
-      if( go && token != NULL){
-        if( wordNumber == 1 && !strcmp(token,".extern") && isCurNumOfWords( line, 2) == 1 && go ){
-          go = 0;
-          token = strtok(NULL, parse_words);
-          wordNumber++;
-          if(wordNumber == 2 && checkForExternAtSecond(names, token, lineNumber) == 0 ){
-            result = 0;
-          }
+      if( go && token != NULL && !strcmp(token,".extern")){
+        go = 0;
+        token = strtok(NULL, parse_words);
+        wordNumber++;
+        if(!isCurNumOfWords( line, 2) || !checkForExternAtSecond(names, token, lineNumber)){
+          printf("in line %d: invalid extern\n",lineNumber);
+          result = 0;
         }
       }
 
       /* entry */
-      if( go && token != NULL){
-        if( wordNumber == 1 && !strcmp(token,".entry") && isCurNumOfWords( line, 2) == 1 ){
+      if( go && token != NULL && !strcmp(token,".entry")){
           go = 0;
           token = strtok(NULL, parse_words);
           wordNumber++;
-          if(wordNumber == 2 && checkForEntryAtSecond(names, token, lineNumber) == 0 ){
-            result = 0;
+        if(!isCurNumOfWords( line, 2) || !checkForEntryAtSecond(names, token, lineNumber) ){
+          printf("in line %d: invalid entry\n",lineNumber);  
+          result = 0;
           }
-        }
       }
       
-
       /* .data */
       if( go && token != NULL){
         if( !strcmp(token,".data") ){
@@ -120,11 +122,11 @@ int validation(FILE *filePtr, LIST *names){
                 break;
               trimTrailing(token);
               
-              printf("\ntoken is:%s@\n", token);
+              //printf("\ntoken is:%s@\n", token);
               
               if( !isAIntNum(token) ){
                 result = 0;
-                printf("line %d:%s is not a number!\n", lineNumber,token);
+                printf("line %d: is not a number!\n", lineNumber);
               } 
             }
             
@@ -253,8 +255,8 @@ int checkForExternAtSecond( LIST *names, char token[], int lineNumber ){
       return 1;
     }
   }
-    printf("inside checkFor-extern-AtBegining :( \n");
-    printf("invalid extern in line: %d \n", lineNumber );
+    //printf("inside checkFor-extern-AtBegining :( \n");
+    //printf("invalid extern in line: %d \n", lineNumber );
   return 0;
 }
 
@@ -264,8 +266,8 @@ int checkForEntryAtSecond( LIST *names, char token[], int lineNumber ){
       return 1;
     }
   }
-    printf("inside checkFor-entry-AtBegining :( \n");
-    printf("invalid entry in line: %d \n", lineNumber );
+    //printf("inside checkFor-entry-AtBegining :( \n");
+    //printf("invalid entry in line: %d \n", lineNumber );
   return 0;
 }
 
