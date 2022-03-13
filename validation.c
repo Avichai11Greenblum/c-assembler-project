@@ -15,16 +15,18 @@
 int validation(FILE *filePtr, LIST *names){
   int result = 1, lineNumber = 0, wordNumber = 0;
   int commaLegit = 0, neededOperands;
-  fseek(filePtr, 0, SEEK_SET);
   char line[MAX_LINE_LENGTH];
-  char lineCopy[MAX_LINE_LENGTH];
   char *token = "aa";
   int numOfValidMacros = 0;
+  
+  fseek(filePtr, 0, SEEK_SET);
   /* for every line */
   while (fgets(line, MAX_LINE_LENGTH, filePtr)){
+    char lineCopy[MAX_LINE_LENGTH];
     lineNumber++;
     strcpy(lineCopy, line);
     token = strtok(lineCopy, parse_words);
+    printf("\nentering line: %d\n", lineNumber);
     
     /* the limit of 200 lines is for the makinng of the code */
     /* for every word */
@@ -121,7 +123,6 @@ int validation(FILE *filePtr, LIST *names){
             }
             
             if(!isValidCommas(wordsInLine-2,line)){
-              printf("am i really checking commas?\n");
               result = 0;
               printf("line %d: invalid commas!\n", lineNumber);
             }
@@ -157,7 +158,7 @@ int validation(FILE *filePtr, LIST *names){
         go = 0;
         neededOperands = howManyOperands( token );
       }*/
-      
+
     }
   }
 
