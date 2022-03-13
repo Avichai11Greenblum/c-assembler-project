@@ -26,32 +26,23 @@ int validation(FILE *filePtr, LIST *names){
     int wordNumber = 0;
     lineNumber++;
     strcpy(lineCopy, line);
-    token = strtok(lineCopy, parse_words);
-    //printf("\ line: %d\n", lineNumber);
-    
+    token = strtok(lineCopy, parse_words); 
     /* the limit of 200 lines is for the makinng of the code */
     /* for every word */
     while( token != NULL && lineNumber <= 200 ){
-      
-      //printf("\ word: %d\n", wordNumber);
-      //printf("token = %s\n",token); 
-      
       int go = 1;
       if( !wordNumber == 0 )
         token = strtok(NULL, parse_words);
       
       wordNumber++;
       
-      /* Label Declaration  - passed first test */
-      if( wordNumber == 1 && checkForLabelAtBegining(names, token, lineNumber) == 0 && token[strlen(token)-1] == ':' ){
-        printf("in line %d: %s is invalid label\n",lineNumber,token);
-        result = 0;
+      /* Label Declaration */
+      if( wordNumber == 1 && token[strlen(token)-1] == ':' ){
+        if(!checkForLabelAtBegining(names, token, lineNumber)){
+          printf("in line %d: %s is invalid label\n",lineNumber,token);
+          result = 0;
+        }
       }
-      /*
-      if( checkForLabelAtBegining(names, token, lineNumber) == 1 ){
-        check commands
-      }
-      */
       
       /* macro */
       if( go && token != NULL){
@@ -111,6 +102,7 @@ int validation(FILE *filePtr, LIST *names){
           go = 0;
           if(wordNumber == 1 || wordNumber == 2){
             int wordsInLine = countWords(line);
+            
             if(wordNumber == 2){
               wordsInLine--; /* for comparing it later to count commas */
             }
@@ -122,58 +114,52 @@ int validation(FILE *filePtr, LIST *names){
                 break;
               trimTrailing(token);
               
-              //printf("\ntoken is:%s@\n", token);
               
               if( !isAIntNum(token) ){
-                result = 0;
                 printf("line %d: is not a number!\n", lineNumber);
+                result = 0;
               } 
             }
             
             if(!isValidCommas(wordsInLine-2,line)){
-              result = 0;
               printf("line %d: invalid commas!\n", lineNumber);
+              result = 0;
             }
           }
         }
       }
     
-
       /* .string */
-      if( go && token != NULL){
-        if( !strcmp(token,".string") ){
+      if( go && token != NULL && !strcmp(token,".string")){
           go = 0;
-
-          if( countQuotationMarks(line) != 2 ){
+          trimTrailing(line);
+          if( countQuotationMarks(line) != 2 || line[strlen(line)-1] != '"' ){
             printf("invalid string in line %d\n", lineNumber);
             result = 0;
           }
-        
-          if( result ){
-            if( line[giveTheLastNoneWhiteIndex(line)] == '"' ){
-              token = strtok(NULL, parse_words);
-              if( !token[0] == '"' ){
-                printf("invalid string in line %d\n", lineNumber);
-                result = 0;
-              }
-            }
-          }
+        }
+      /* empty or comment */
+      if(go && token != NULL && skip(line)){
+        go = 0;
+      }
+      /* command */
+      if( go && token != NULL){
+        if( isACommand( token ) ){
+          int operandsNum = howManyOperands(token);
+          char lineCopyCommand[31];
+          strcpy(lineCopyCommand, line);
+          
+          go = 0;
+          
+          if( !isCommandLegit(lineCopy, operandsNum, wordNumber, names, lineCopyCommand) )
+            result = 0;
+          
         }
       }
-
-      /* command */
-      /*if( isACommand(token) && go ){
-        go = 0;
-        neededOperands = howManyOperands( token );
-      }*/
-
     }
   }
-
-  
   return result;
 }
-
 
 /* this function is the first pass that parses the
 words and filter the special words words */
@@ -230,8 +216,6 @@ int checkForLabelAtBegining( LIST *names, char token[], int lineNumber ){
         return 1;
       }
     }
-    printf("inside checkForLabelAtBegining :( \n");
-    printf("invalid label in line: %d \n", lineNumber );
   }
   return 0;
 }
@@ -244,8 +228,6 @@ int checkForMacroAtSecond( LIST *names, char token[], int lineNumber ){
       return 1;
     }
   }
-    //printf("inside checkFor-Macro-AtBegining :( \n");
-    //printf("invalid macro in line: %d \n", lineNumber );
   return 0;
 }
 
@@ -255,8 +237,6 @@ int checkForExternAtSecond( LIST *names, char token[], int lineNumber ){
       return 1;
     }
   }
-    //printf("inside checkFor-extern-AtBegining :( \n");
-    //printf("invalid extern in line: %d \n", lineNumber );
   return 0;
 }
 
@@ -266,8 +246,6 @@ int checkForEntryAtSecond( LIST *names, char token[], int lineNumber ){
       return 1;
     }
   }
-    //printf("inside checkFor-entry-AtBegining :( \n");
-    //printf("invalid entry in line: %d \n", lineNumber );
   return 0;
 }
 
@@ -287,20 +265,51 @@ int howManyOperands( char commandName[] ){
   return -1;
 }
 
-int isCommandLegit( char line[] ){
+int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *names, int lineNumber ){
   char *token;
-  int flag = 1, commas;
-
-  commas = countCommas(line);
-  token = strtok( line, "," );
-
-  while( token != NULL && flag ){
-    if( isACommand(token) )
-      flag = 0;
+  int operand_index = 0;
+  int result = 1;
+  if(wordNumber == 1 || wordNumber == 2){
+    int wordsInLine = countWords(lineCopy);
     
-    token = strtok( line, parse_commands );
+    if( wordsInLine - 1 != operandsNum && wordsInLine - 2 != operandsNum )
+      result = 0;
+
+    if(wordNumber == 2){
+      wordsInLine--; /* for comparing it later to count commas */
+    }
+    
+    printf("line copy:%s\n", lineCopy);
+    printf("1\n");
+    printf("token:%s@\n", token);
+    printf("2\n");
+    
+    while( result && token != NULL ){
+      int delivery_num;
+
+      token = strtok( NULL, "\n ," ); 
+      if( token == NULL )
+        break;
+      trimTrailing(token);
+      operand_index++;
+      
+      /* token is now a operand */
+      delivery_num = whichDelivery(token, names);
+      if( delivery_num == -1 ){
+        result = 0;
+        printf("invalid addressing line:%d", lineNumber);
+        break;
+      }
+
+      printf("operand number %d, is:%s", operand_index, token);
+    }
+    
+    if(!isValidCommas(wordsInLine-2,lineCopy)){
+      result = 0;
+      printf("line %d: invalid commas!\n", lineNumber);
+    }
   }
-    
+  return 1;
 }
 
 /* func to decide which delivery it is
@@ -316,7 +325,7 @@ int whichDelivery(char myStr[], LIST *names){
     return 0;
   }
   /* Delivery 1 */
-  if(isAGuidance(myStr)){
+  if(has(names,myStr) && getNode(names,myStr)->mac == 0){
     return 1;
   }
 
@@ -380,29 +389,16 @@ char* getRidOfFirstChar(char myStr[]){
   return myStr + 1;
 }
 
-int isACommand(char line []){
-  LIST *l = newList();
-  insert(l,"mov");
-  insert(l,"cmp");
-  insert(l,"add");
-  insert(l,"sub");
-  insert(l,"lea");
-  insert(l,"clr");
-  insert(l,"not");
-  insert(l,"inc");
-  insert(l,"dec");
-  insert(l,"jmp");
-  insert(l,"bne");
-  insert(l,"jsr");
-  insert(l,"red");
-  insert(l,"prn");
-  insert(l,"rts");
-  insert(l,"stop");
-  return has(l,line);
+int isACommand(char token[] ){
+  if( !strcmp(token,"mov") || !strcmp(token,"cmp") || !strcmp(token,"add") || !strcmp(token,"sub") || !strcmp(token,"lea") || !strcmp(token,"clr") || !strcmp(token,"not") || !strcmp(token,"inc") || !strcmp(token,"dec") || !strcmp(token,"jmp") || !strcmp(token,"bne") || !strcmp(token,"jsr") || !strcmp(token,"red") || !strcmp(token,"prn") || !strcmp(token,"rts") || !strcmp(token,"stop") )
+    return 1;
+
+  return 0;
 }
 
 int isARegister(char line[]){
   move_to_none_white(line, 0);
+  trimTrailing(line);
   if(!strcmp(line,"r0"))
     return 0;  
   if(!strcmp(line,"r1"))
