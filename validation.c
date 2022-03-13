@@ -13,7 +13,7 @@
 
 
 int validation(FILE *filePtr, LIST *names){
-  int result = 1, lineNumber = 0, wordNumber = 0;
+  int result = 1, lineNumber = 0;
   int commaLegit = 0, neededOperands;
   char line[MAX_LINE_LENGTH];
   char *token = "aa";
@@ -23,14 +23,19 @@ int validation(FILE *filePtr, LIST *names){
   /* for every line */
   while (fgets(line, MAX_LINE_LENGTH, filePtr)){
     char lineCopy[MAX_LINE_LENGTH];
+    int wordNumber = 0;
     lineNumber++;
     strcpy(lineCopy, line);
     token = strtok(lineCopy, parse_words);
-    printf("\nentering line: %d\n", lineNumber);
+    printf("\ line: %d\n", lineNumber);
     
     /* the limit of 200 lines is for the makinng of the code */
     /* for every word */
     while( token != NULL && lineNumber <= 200 ){
+      
+      printf("\ word: %d\n", wordNumber);
+      printf("token = %s\n",token); 
+      
       int go = 1;
       if( !wordNumber == 0 )
         token = strtok(NULL, parse_words);
@@ -50,16 +55,17 @@ int validation(FILE *filePtr, LIST *names){
       
       /* macro */
       if( go && token != NULL){
-        if( wordNumber == 1 && !strcmp(token,"macro") && isCurNumOfWords( line, 2) == 1 ){
+        trimTrailing(token);
+        
+        if( wordNumber == 1 && !strcmp(token,"macro")){
           go = 0;
           token = strtok(NULL, parse_words);
           wordNumber++;
-          if(wordNumber == 2 && checkForMacroAtSecond(names, token, lineNumber) == 0 ){
+          if(wordNumber == 2 && checkForMacroAtSecond(names, token, lineNumber) == 0 && isCurNumOfWords( line, 2) == 0){
             result = 0;
-            printf("in line %d: %s is invalid macro\n",lineNumber,token);
+            printf("in line %d: invalid macro\n",lineNumber);
           }
           else{
-            printf("valid macro is found!\n");
             numOfValidMacros--;
           }
         }
