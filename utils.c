@@ -91,16 +91,11 @@ int isANaturalNum(char c){
 }
 
 int isAIntNum(char input[]){
-  int i = 0;
-  int j = giveTheLastNoneWhiteIndex(input);
-  //printf("last not white index->%d@\n", j);
-  if(input[0] == '-' || input[0] == '+'){
+  int i = move_to_none_white(input,0);
+  if(input[i] == '-' || input[i] == '+'){
     i++;
   }
-  while(input[i]!='\0' ){
-    if( i >= j )
-      break;
-
+  while(input[i]!='\0'){
     if(input[i] == '-' || input[i] == '+'){
       return 0;
     }
