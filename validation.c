@@ -274,15 +274,15 @@ int howManyOperands( char commandName[] ){
 
 int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *names, int lineNumber ){
   char *token;
+  char *command_name;
   int operand_index = 0;
   int result = 1;
-
+  
   trimTrailing(lineCopy);
   
   if(wordNumber == 1 || wordNumber == 2){
     int i, iter;
     int wordsInLine = countWords(lineCopy);
-
 
     /* checking valid though the number of lines */
     if(wordNumber == 2)
@@ -296,8 +296,12 @@ int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *name
     /* token initialization and advancement */
     token = strtok( lineCopy, "\n ," );
     
-    if( isACommand(token) )
+    if( isACommand(token) ){
+      trimTrailing(token);
+      strcpy(command_name, token);
       iter = 1;
+    }
+      
     else
       iter = 2;
 
@@ -306,7 +310,8 @@ int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *name
       if( token == NULL )
         result = 0;
     }
-    
+
+    /* from here the tokens are the operands */
     while( result && token != NULL ){
       int delivery_num;
       
@@ -339,9 +344,9 @@ int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *name
 /* func to decide which delivery it is
    the given string is after move to none white!*/
 int whichDelivery(char myStr[], LIST *names){
-  char tempLine[30];
-  char tempLabel[30];
-  char tempRegister[30];
+  char tempLine[MAX_LABEL_LENGTH];
+  char tempLabel[MAX_LABEL_LENGTH];
+  char tempReg[MAX_LABEL_LENGTH];
   char* token;
   
   /* Delivery 0 */
@@ -353,11 +358,6 @@ int whichDelivery(char myStr[], LIST *names){
     return 1;
   }
 
-  /* Delivery 3 */
-  if( isARegister(myStr) != -1 ){
-    return 3;
-  }
-  
   /* Delivery 2 */
   strcpy(tempLine, myStr);
   token = strtok(tempLine, parse_delivery);
@@ -366,20 +366,20 @@ int whichDelivery(char myStr[], LIST *names){
   token = strtok(NULL, parse_delivery);
   if(token == NULL)
     return -1;
-  strcpy( tempRegister, token );
-
-  if( strlen(tempRegister) == 4 ){
-      if( tempRegister[0] == 'r' && tempRegister[1] == '1' && tempRegister[3] == ']' ){
-  
-          if( tempRegister[2] == '0' || tempRegister[2] == '1' || tempRegister[2] == '2' || tempRegister[2] == '3' ||         tempRegister[2] == '4' ||         tempRegister[2] == '5' ){
-
-            if( has( names, tempLabel) ){
+  strcpy( tempReg, token );
+  if( strlen(tempReg) == 4 ){
+      if( tempReg[0] == 'r' && tempReg[1] == '1' && tempReg[3] == ']' ){
+        if( tempReg[2] >= '0' && tempReg[2] <= '5' ){
+          if( has( names, tempLabel) && getNode(names,tempLabel)->mac == 0 ){
               return 2;
             }
           }
       } 
   }
-
+  /* Delivery 3 */
+  if( isARegister(myStr) != -1 ){
+    return 3;
+  }
   else
     return -1;
 }
@@ -406,7 +406,7 @@ int isACommentOrEmpty(char line []){
   return 1;
 }
 
-/* as easy as it sounds */
+/* delete it? */
 char* getRidOfFirstChar(char myStr[]){
   return myStr + 1;
 }
@@ -420,7 +420,7 @@ int isACommand(char token[] ){
 
 int isARegister(char line[]){
   move_to_none_white(line, 0);
-  trimTrailing(line);
+  /* trimTrailing(line); */ /* created segmention fault */
   if(!strcmp(line,"r0"))
     return 0;  
   if(!strcmp(line,"r1"))
