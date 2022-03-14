@@ -146,18 +146,25 @@ int validation(FILE *filePtr, LIST *names){
       if( go && token != NULL){
         if( isACommand( token ) ){
           int operandsNum = howManyOperands(token);
-          char lineCopyCommand[31];
+          char lineCopyCommand[MAX_LINE_LENGTH];
+          
           strcpy(lineCopyCommand, line);
           
-          go = 0;
-          
-          if( !isCommandLegit(lineCopy, operandsNum, wordNumber, names, lineCopyCommand) )
+          if( !isCommandLegit(line, operandsNum, wordNumber, names, lineNumber) )
+            go = 0;
             result = 0;
-          
         }
       }
+      /* if the line is unrecognizable */
+      if(go && result){
+        printf("unrecognizable line in line %d\n",lineNumber);
+        result = 0;
+        break;
+      }
+      
     }
   }
+  printf("result = %d\n",result);
   return result;
 }
 
@@ -269,45 +276,62 @@ int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *name
   char *token;
   int operand_index = 0;
   int result = 1;
-  if(wordNumber == 1 || wordNumber == 2){
-    int wordsInLine = countWords(lineCopy);
-    
-    if( wordsInLine - 1 != operandsNum && wordsInLine - 2 != operandsNum )
-      result = 0;
 
-    if(wordNumber == 2){
+  trimTrailing(lineCopy);
+  
+  if(wordNumber == 1 || wordNumber == 2){
+    int i, iter;
+    int wordsInLine = countWords(lineCopy);
+
+
+    /* checking valid though the number of lines */
+    if(wordNumber == 2)
       wordsInLine--; /* for comparing it later to count commas */
-    }
     
-    printf("line copy:%s\n", lineCopy);
-    printf("1\n");
-    printf("token:%s@\n", token);
-    printf("2\n");
+    if( wordsInLine - 1 != operandsNum){
+      printf("too many or too few words in line: %d\n", lineNumber);
+      return 0;
+    }
+
+    /* token initialization and advancement */
+    token = strtok( lineCopy, "\n ," );
+    
+    if( isACommand(token) )
+      iter = 1;
+    else
+      iter = 2;
+
+    for( i = 0; i < iter; i++ ){
+      token = strtok( NULL, "\n ," );
+      if( token == NULL )
+        result = 0;
+    }
     
     while( result && token != NULL ){
       int delivery_num;
-
-      token = strtok( NULL, "\n ," ); 
-      if( token == NULL )
-        break;
+      
       trimTrailing(token);
       operand_index++;
       
-      /* token is now a operand */
+      printf("operand index %d is->%s@\n", operand_index,token);
+      token = strtok( NULL, "\n ," ); 
+    }
+      
+      /* token is now a operand 
       delivery_num = whichDelivery(token, names);
       if( delivery_num == -1 ){
         result = 0;
-        printf("invalid addressing line:%d", lineNumber);
+        printf("invalid addressing line:%d\n", lineNumber);
         break;
       }
 
-      printf("operand number %d, is:%s", operand_index, token);
+      
     }
     
     if(!isValidCommas(wordsInLine-2,lineCopy)){
       result = 0;
       printf("line %d: invalid commas!\n", lineNumber);
-    }
+    }*/
   }
   return 1;
 }
@@ -338,13 +362,11 @@ int whichDelivery(char myStr[], LIST *names){
   strcpy(tempLine, myStr);
   token = strtok(tempLine, parse_delivery);
   strcpy( tempLabel, token );
-  printf("\nlabel->%s", tempLabel);
  
   token = strtok(NULL, parse_delivery);
   if(token == NULL)
     return -1;
   strcpy( tempRegister, token );
-  printf("\nregister->%s", tempRegister);
 
   if( strlen(tempRegister) == 4 ){
       if( tempRegister[0] == 'r' && tempRegister[1] == '1' && tempRegister[3] == ']' ){
