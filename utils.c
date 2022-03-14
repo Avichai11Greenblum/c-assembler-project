@@ -22,6 +22,9 @@ char *cutWhiteChars(char *str)
     return newStr;
 }
 commandsStruct ourCommands[] = {
+    
+    /* name, opcode, funct, num of param */
+    
     /* first group -> have 2 operands*/
     {"mov", 0, 0, 2},
     {"cmp", 1, 0, 2},
