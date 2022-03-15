@@ -27,21 +27,23 @@ int validation(FILE *filePtr, LIST *names){
     lineNumber++;
     strcpy(lineCopy, line);
     token = strtok(lineCopy, parse_words); 
+    int go = 1;
     /* the limit of 200 lines is for the makinng of the code */
     /* for every word */
     while( token != NULL && lineNumber <= 200 ){
-      int go = 1;
       if( !wordNumber == 0 )
         token = strtok(NULL, parse_words);
       
       wordNumber++;
-      
+      //int go = 1;
       /* Label Declaration */
       if( wordNumber == 1 && token[strlen(token)-1] == ':' ){
         if(!checkForLabelAtBegining(names, token, lineNumber)){
           printf("in line %d: %s is invalid label\n",lineNumber,token);
           result = 0;
         }
+        token = strtok(NULL, parse_words);
+        wordNumber++;
       }
       
       /* macro */
@@ -61,7 +63,13 @@ int validation(FILE *filePtr, LIST *names){
           }
         }
       }
-
+      if(go && token != NULL && has(names,token)){
+        //printf("token1 = %s in line %d\n",token,lineNumber);
+        NODE* p = getNode(names,token);
+        if(p->mac == 1 && countWords(line) == 1){
+          go = 0;
+        }
+      }
       /* endm */
       if( go && token != NULL && !strcmp(token,"endm")){
         go = 0;
@@ -131,37 +139,83 @@ int validation(FILE *filePtr, LIST *names){
     
       /* .string */
       if( go && token != NULL && !strcmp(token,".string")){
+          int i = 0;
+          int j[MAX_LINE_LENGTH];
+          int countQM = 0;
           go = 0;
+
+          /* token is now .string so we advance it */
+          token = strtok(NULL, "\"");
+          trimTrailing(token);
+        
           trimTrailing(line);
-          if( countQuotationMarks(line) != 2 || line[strlen(line)-1] != '"' ){
+          printf("token->@%s@\n\n",token);
+
+          /* converting the chars to ASCII so we wont have the 
+              problem that the first " ends the string */
+          for( i=0; i < strlen(token); i++ ){
+            j[i] = token[i];
+          }
+
+          /* check the ASCII value of the chars in the array */
+          for( i=0; i < strlen(token); i++ ){
+            
+            if( j[i] == 34 ){
+              countQM++; /* count the quotation marks */
+              if( i != 0 || i != strlen(token) - 1 ){
+                printf("problem with quotation marks in line:%d\n", lineNumber);
+                printf("place:%d\n", i);
+                printf("pizza\n\n");
+                result = 0;  
+              }
+            }
+           /* else if( j[i] == -30 && i != 0 ){
+              printf("problem with quotation marks in line:%d\n", lineNumber);
+              printf("place:%d\n", i);
+              printf("panckae\n\n");
+              result = 0;  
+            }
+              
+            else if( j[i] == -100 || j[i] == -99 && i != strlen(token) - 1 ){
+              printf("problem with quotation marks in line:%d\n", lineNumber);
+              printf("place:%d\n", i);
+              printf("muffin\n\n");
+              result = 0;  
+            }*/
+              
+          }
+          if( countQM != 2 ){
+            printf("problem with quotation marks in line:%d\n", lineNumber);
+          }
+            
+          /*if( countQuotationMarks(line) != 2 || line[strlen(line)-1] != '"' ){
             printf("invalid string in line %d\n", lineNumber);
             result = 0;
-          }
+          }*/
         }
       /* empty or comment */
       if(go && token != NULL && skip(line)){
+        
         go = 0;
       }
       /* command */
       if( go && token != NULL){
-        if( isACommand( token ) ){
-          int operandsNum = howManyOperands(token);
-          char lineCopyCommand[MAX_LINE_LENGTH];
-          
-          strcpy(lineCopyCommand, line);
-          
-          if( !isCommandLegit(line, operandsNum, wordNumber, names, lineNumber) )
-            go = 0;
+        if( isACommand( token ) ){           
+          go = 0;
+          if(!isRight(line,names)){
+            printf("invalid operands in line %d\n",lineNumber);
             result = 0;
+          }
         }
       }
       /* if the line is unrecognizable */
-      if(go && result){
+      if(go){
+        //printf("token2 = %s in line %d\n",token,lineNumber);
+        go = 0;
         printf("unrecognizable line in line %d\n",lineNumber);
         result = 0;
         break;
       }
-      
     }
   }
   printf("result = %d\n",result);
@@ -171,7 +225,45 @@ int validation(FILE *filePtr, LIST *names){
 /* this function is the first pass that parses the
 words and filter the special words words */
 
-/* need to fix a bug - if there is empty line in the input we have an error */
+int isRight(char line [], LIST *names){
+  char command [MAX_LABEL_LENGTH] = "-1";
+  char firstOp [MAX_LABEL_LENGTH] = "-1";
+  char secondOp [MAX_LABEL_LENGTH] = "-1";
+  char lineCopy[MAX_LINE_LENGTH];
+  char *token = "aa";
+  int rightCommas = countWords(line) -2;
+
+  strcpy(lineCopy, line);
+  token = strtok(lineCopy, parse_words); 
+  if(token[strlen(token)-1] == ':'){
+    token = strtok(NULL, parse_words);
+    rightCommas--;
+  }
+  if(rightCommas < 0){
+    rightCommas = 0;
+  }
+  if(!isValidCommas(rightCommas,line) || rightCommas > 1){
+    return 0;
+  }
+  int i = 0;
+  while(token != NULL){
+    
+    if(i==0)
+      strcpy(command,token);
+    if(i==1)
+      strcpy(firstOp,token);
+    if(i==2)
+      strcpy(secondOp,token);
+    if(i==3)
+      return 0;
+    
+    i++;
+    token = strtok(NULL, " ,\t\n");
+  }
+
+  return validOperands(command,firstOp,secondOp,names);
+}
+
 LIST *validNames(FILE *fileName, char *nameOfFile){
   char line[MAX_LINE_LENGTH];
   char lineCopy[MAX_LINE_LENGTH];
@@ -212,49 +304,6 @@ LIST *validNames(FILE *fileName, char *nameOfFile){
   return names;
 }
 
-int checkForLabelAtBegining( LIST *names, char token[], int lineNumber ){
-
-  if(token[strlen(token)-1] == ':'){
-    token[strlen(token)-1] = '\0';
-    
-    if( has( names, token) ){
-      if( getNode(names, token)->labDec == 1 ){
-        getNode(names, token)->labDec = 0;
-        return 1;
-      }
-    }
-  }
-  return 0;
-}
-
-int checkForMacroAtSecond( LIST *names, char token[], int lineNumber ){
-
-  if( has(names, token) ){
-    if( getNode(names, token)->mac == 1 ){
-      getNode(names, token)->mac = 0;
-      return 1;
-    }
-  }
-  return 0;
-}
-
-int checkForExternAtSecond( LIST *names, char token[], int lineNumber ){
-    if( has(names, token) ){
-    if( getNode(names, token)->ext != 0 ){
-      return 1;
-    }
-  }
-  return 0;
-}
-
-int checkForEntryAtSecond( LIST *names, char token[], int lineNumber ){
-    if( has(names, token) ){
-    if( getNode(names, token)->ent != 0 ){
-      return 1;
-    }
-  }
-  return 0;
-}
 
 /* given a command find how many */
 int howManyOperands( char commandName[] ){
@@ -272,20 +321,26 @@ int howManyOperands( char commandName[] ){
   return -1;
 }
 
+/* can delete it */
 int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *names, int lineNumber ){
   char *token;
   char *command_name;
   int operand_index = 0;
   int result = 1;
-  
+  char SecondOp [30] = "-1";
+  char firstOp [30] = "-1";
+  //printf("1\n");
   trimTrailing(lineCopy);
-  
+  //printf("lineCopy = %s\n",lineCopy);
+ // printf("wordNumber = %d\n",wordNumber);
+  //printf("operandsNum = %d\n",operandsNum);
   if(wordNumber == 1 || wordNumber == 2){
     int i, iter;
     int wordsInLine = countWords(lineCopy);
 
     /* checking valid though the number of lines */
     if(wordNumber == 2)
+      //token = strtok( lineCopy, "\n ," );
       wordsInLine--; /* for comparing it later to count commas */
     
     if( wordsInLine - 1 != operandsNum){
@@ -295,7 +350,7 @@ int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *name
 
     /* token initialization and advancement */
     token = strtok( lineCopy, "\n ," );
-    
+    //printf("1token = %s\n",token);
     if( isACommand(token) ){
       trimTrailing(token);
       strcpy(command_name, token);
@@ -307,36 +362,30 @@ int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *name
 
     for( i = 0; i < iter; i++ ){
       token = strtok( NULL, "\n ," );
+
       if( token == NULL )
         result = 0;
     }
-
-    /* from here the tokens are the operands */
     while( result && token != NULL ){
+      printf("token = %s\n",token);
       int delivery_num;
-      
+
       trimTrailing(token);
       operand_index++;
-      
-      printf("operand index %d is->%s@\n", operand_index,token);
+
+      if(operand_index == 1){
+        strcpy(firstOp,token);
+      }
+      if(operand_index == 2){
+        strcpy(SecondOp,token);
+      }
+      //printf("operand index %d is->%s@\n", operand_index,token);
       token = strtok( NULL, "\n ," ); 
     }
-      
-      /* token is now a operand 
-      delivery_num = whichDelivery(token, names);
-      if( delivery_num == -1 ){
-        result = 0;
-        printf("invalid addressing line:%d\n", lineNumber);
-        break;
-      }
+     printf("firstOp = %s\n",firstOp);
+     printf("SecondOp = %s\n",SecondOp);
+     printf("command_name = %s\n",command_name);
 
-      
-    }
-    
-    if(!isValidCommas(wordsInLine-2,lineCopy)){
-      result = 0;
-      printf("line %d: invalid commas!\n", lineNumber);
-    }*/
   }
   return 1;
 }
@@ -349,6 +398,10 @@ int whichDelivery(char myStr[], LIST *names){
   char tempReg[MAX_LABEL_LENGTH];
   char* token;
   
+  if( myStr == NULL ){
+    return 0;
+  }
+  
   /* Delivery 0 */
   if( myStr[0] == '#' && isAIntNum(myStr + 1)){
     return 0;
@@ -357,7 +410,10 @@ int whichDelivery(char myStr[], LIST *names){
   if(has(names,myStr) && getNode(names,myStr)->mac == 0){
     return 1;
   }
-
+  /* Delivery 3 */
+  if( isARegister(myStr) != -1 ){
+    return 3;
+  }
   /* Delivery 2 */
   strcpy(tempLine, myStr);
   token = strtok(tempLine, parse_delivery);
@@ -375,10 +431,6 @@ int whichDelivery(char myStr[], LIST *names){
             }
           }
       } 
-  }
-  /* Delivery 3 */
-  if( isARegister(myStr) != -1 ){
-    return 3;
   }
   else
     return -1;
@@ -472,6 +524,51 @@ int isNameOk(char line []){
   return 1;
 }
 
+/* need to solve the option of two identical macros */
+int checkForMacroAtSecond( LIST *names, char token[], int lineNumber ){
+
+  if( has(names, token) ){
+    if( getNode(names, token)->mac == 1 ){
+      //getNode(names, token)->mac = 0;
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int checkForExternAtSecond( LIST *names, char token[], int lineNumber ){
+    if( has(names, token) ){
+    if( getNode(names, token)->ext != 0 ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int checkForEntryAtSecond( LIST *names, char token[], int lineNumber ){
+    if( has(names, token) ){
+    if( getNode(names, token)->ent != 0 ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int checkForLabelAtBegining( LIST *names, char token[], int lineNumber ){
+
+  if(token[strlen(token)-1] == ':'){
+    token[strlen(token)-1] = '\0';
+    
+    if( has( names, token) ){
+      if( getNode(names, token)->labDec == 1 ){
+        getNode(names, token)->labDec = 0;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 /* insert macro */
 void insertMa(char token [], LIST* names){
   if(isNameOk(token)){
@@ -530,3 +627,72 @@ void insertLD(char token [], LIST* names){
   }
 }
 
+int validOperands(char com [], char firstOp [], char secondOp [], LIST *names){
+  //printf("com = %s \tfirstOp = %s\tsecondOp = %s\n",com,firstOp,secondOp);
+    
+  int op1 = -1;
+  int op2 = -1;
+  int res1 = 0;
+  int res2 = 0;
+  //printf("i've been here\n");
+  trimTrailing(firstOp);
+  if( firstOp[0] != '\0' ){
+    op1 = whichDelivery(firstOp,names);
+  } 
+  
+  trimTrailing(secondOp);
+  if( secondOp[0] != '\0' ){
+    
+    op2 = whichDelivery(secondOp,names);
+  }
+  /* op1 = 0,1,2,3 */ if(!strcmp(com,"mov")||!strcmp(com,"cmp")||!strcmp(com,"add")||!strcmp(com,"sub")){
+    if(op1 != -1){
+      res1 = 1;
+      
+    }
+  }
+  if(!strcmp(com,"prn") && op1 != -1 && !strcmp(secondOp,"-1"))
+    return 1;
+  
+  /* op1 = 1,2,3  (they have only 1 operand) */
+  if(!strcmp(com,"clr")||!strcmp(com,"not")||!strcmp(com,"inc")|| !strcmp(com,"dec")){
+    if(op1 != -1 && op1 != 0 && !strcmp(secondOp,"-1"))
+      return 1;
+  }
+  if(!strcmp(com,"red") && op1 != -1 && op1 != 0 && !strcmp(secondOp,"-1"))
+    return 1;
+  
+  /* op1 = 1,2 */
+  if(!strcmp(com,"lea") && (op1 == 1 || op1 == 2))
+    res1 = 1;
+  
+  if(!strcmp(com,"jmp") || !strcmp(com,"bne") || !strcmp(com,"jsr")){
+    if((op1 == 1 || op1 == 2) && !strcmp(secondOp,"-1")){
+      return 1;
+    }
+  }
+  /* no operands */
+  if(!strcmp(com,"rts") || !strcmp(com,"stop")){
+    if(!strcmp(firstOp,"-1") && !strcmp(secondOp,"-1")){
+      return 1;
+    }
+  }
+  /* op2 = 0,1,2,3*/
+  if(!strcmp(com,"cmp") && op2 != -1)
+    res2 = 1;
+  
+  /* op2 = 1,2,3 */
+  if(!strcmp(com,"mov") || !strcmp(com,"add") || !strcmp(com,"sub") ||!strcmp(com,"lea")){
+    /* problem if there is invalid label as operand */
+    
+    //printf("com = %s\t op1 = %d\top2 = %d\n",com,op1,op2);
+    if(op2 != 0 && op2 != -1){
+      res2 = 1;
+    }
+  }
+  
+  if(res1 && res2)
+    return 1;
+  
+  return 0;
+}
