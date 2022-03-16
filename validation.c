@@ -11,7 +11,7 @@
 #define parse_delivery " ,\t\n["
 #define parse_commands " ,\t\n:"
 
-
+/* check if a given code is valid in assembly */
 int validation(FILE *filePtr, LIST *names){
   int result = 1, lineNumber = 0;
   int commaLegit = 0, neededOperands;
@@ -64,9 +64,8 @@ int validation(FILE *filePtr, LIST *names){
         }
       }
       if(go && token != NULL && has(names,token)){
-        //printf("token1 = %s in line %d\n",token,lineNumber);
         NODE* p = getNode(names,token);
-        if(p->mac == 1 && countWords(line) == 1){
+        if(p->mac != 0 && countWords(line) == 1){
           go = 0;
         }
       }
@@ -137,62 +136,67 @@ int validation(FILE *filePtr, LIST *names){
         }
       }
     
-      /* .string */
-      if( go && token != NULL && !strcmp(token,".string")){
-          int i = 0;
-          int j[MAX_LINE_LENGTH];
-          int countQM = 0;
-          go = 0;
+    /* .string */ /* come here */
+    if( go && token != NULL && !strcmp(token,".string")){
+        int i = 0;
+        int j[MAX_LINE_LENGTH];
+        int countQM = 0;
+        go = 0;
+      
+        /* token is now .string so we advance it */
+        token = strtok(NULL, "\t ");
+        trimTrailing(token);
 
-          /* token is now .string so we advance it */
-          token = strtok(NULL, "\"");
-          trimTrailing(token);
-        
-          trimTrailing(line);
-          printf("token->@%s@\n\n",token);
-
-          /* converting the chars to ASCII so we wont have the 
-              problem that the first " ends the string */
-          for( i=0; i < strlen(token); i++ ){
-            j[i] = token[i];
-          }
-
-          /* check the ASCII value of the chars in the array */
-          for( i=0; i < strlen(token); i++ ){
-            
-            if( j[i] == 34 ){
-              countQM++; /* count the quotation marks */
-              if( i != 0 || i != strlen(token) - 1 ){
-                printf("problem with quotation marks in line:%d\n", lineNumber);
-                printf("place:%d\n", i);
-                printf("pizza\n\n");
-                result = 0;  
-              }
-            }
-           /* else if( j[i] == -30 && i != 0 ){
-              printf("problem with quotation marks in line:%d\n", lineNumber);
-              printf("place:%d\n", i);
-              printf("panckae\n\n");
-              result = 0;  
-            }
-              
-            else if( j[i] == -100 || j[i] == -99 && i != strlen(token) - 1 ){
-              printf("problem with quotation marks in line:%d\n", lineNumber);
-              printf("place:%d\n", i);
-              printf("muffin\n\n");
-              result = 0;  
-            }*/
-              
-          }
-          if( countQM != 2 ){
-            printf("problem with quotation marks in line:%d\n", lineNumber);
-          }
-            
-          /*if( countQuotationMarks(line) != 2 || line[strlen(line)-1] != '"' ){
-            printf("invalid string in line %d\n", lineNumber);
-            result = 0;
-          }*/
+        if( token[0] == '\0' ){
+          printf("empty string in line: %d\n", lineNumber);
+          result = 0;
         }
+
+        /* delete the next 2 lines when done */
+        trimTrailing(line);
+        printf("\ntoken->@%s@\n",token);
+
+        /* converting the chars to ASCII so we wont have the 
+            problem that the first " ends the string */
+        for( i=0; i < strlen(token); i++ ){
+          j[i] = token[i];
+          printf("index:%d\t char:%c\tvalue:%d\n", i, token[i], j[i]);
+        }
+
+        /* check the ASCII value of the chars in the array */
+        for( i=0; i < strlen(token); i++ ){
+          
+          if( j[i] == 34 ){
+            countQM++; /* count the quotation marks */
+            if( i != 0 && i != strlen(token) - 1 ){
+              printf("invalid string in line:%d\n", lineNumber);
+              result = 0;  
+            }
+          }
+
+          if( i == (strlen(token) - 1) && j[i] != 34 ){
+            token = strtok(NULL, "\t \n");
+            printf("muffin -> %s\n", token);
+          }
+            
+            
+        }
+        if( result && countQM != 2 ){ 
+          printf("invalid string in line:%d\n", lineNumber);
+          result = 0;  
+        }
+          
+        if( result && token != NULL ){ 
+          token = strtok(NULL, "\t \n");
+          
+          
+          if( token != NULL ){
+            printf("invalid string in line:%d\n", lineNumber);
+            result = 0;  
+          }
+        }
+      
+      }
       /* empty or comment */
       if(go && token != NULL && skip(line)){
         
@@ -225,6 +229,7 @@ int validation(FILE *filePtr, LIST *names){
 /* this function is the first pass that parses the
 words and filter the special words words */
 
+  /*check if a given command line is valid */
 int isRight(char line [], LIST *names){
   char command [MAX_LABEL_LENGTH] = "-1";
   char firstOp [MAX_LABEL_LENGTH] = "-1";
@@ -264,6 +269,7 @@ int isRight(char line [], LIST *names){
   return validOperands(command,firstOp,secondOp,names);
 }
 
+/* returns the valid macro and label as a list */
 LIST *validNames(FILE *fileName, char *nameOfFile){
   char line[MAX_LINE_LENGTH];
   char lineCopy[MAX_LINE_LENGTH];
@@ -305,7 +311,8 @@ LIST *validNames(FILE *fileName, char *nameOfFile){
 }
 
 
-/* given a command find how many */
+/* given a command find how many operands */
+/* delete? */
 int howManyOperands( char commandName[] ){
   if( !strcmp(commandName, "mov") || !strcmp(commandName, "cmp") || !strcmp(commandName, "add") || !strcmp(commandName, "sub") || !strcmp(commandName, "lea") ){
     return 2;
@@ -436,6 +443,7 @@ int whichDelivery(char myStr[], LIST *names){
     return -1;
 }
 
+/* delete it? */
 int isAGuidance(char line []){
   LIST *l = newList();
   insert(l,".data");
@@ -444,7 +452,8 @@ int isAGuidance(char line []){
 //  insert(l,".extern");
   return has(l,line);
 }
-  
+
+/* delete it? */
 int isACommentOrEmpty(char line []){
   int i = 0;
   while(line[i] != '\0'){
@@ -463,6 +472,7 @@ char* getRidOfFirstChar(char myStr[]){
   return myStr + 1;
 }
 
+/* check if a given string is a command */
 int isACommand(char token[] ){
   if( !strcmp(token,"mov") || !strcmp(token,"cmp") || !strcmp(token,"add") || !strcmp(token,"sub") || !strcmp(token,"lea") || !strcmp(token,"clr") || !strcmp(token,"not") || !strcmp(token,"inc") || !strcmp(token,"dec") || !strcmp(token,"jmp") || !strcmp(token,"bne") || !strcmp(token,"jsr") || !strcmp(token,"red") || !strcmp(token,"prn") || !strcmp(token,"rts") || !strcmp(token,"stop") )
     return 1;
@@ -470,6 +480,7 @@ int isACommand(char token[] ){
   return 0;
 }
 
+/* check if a given string is a register */
 int isARegister(char line[]){
   move_to_none_white(line, 0);
   /* trimTrailing(line); */ /* created segmention fault */
@@ -509,7 +520,7 @@ int isARegister(char line[]){
   return -1;
 }
 
-/* is name valid or not */
+/* check if a given string is a valid name */
 int isNameOk(char line []){
   int i = 0;
   if(!isalpha(line[i]) || isARegister(line) != -1 || isACommand(line) || strlen(line) > MAX_LABEL_LENGTH){
@@ -525,11 +536,12 @@ int isNameOk(char line []){
 }
 
 /* need to solve the option of two identical macros */
+/* check if a given string is a valid macro */
 int checkForMacroAtSecond( LIST *names, char token[], int lineNumber ){
 
   if( has(names, token) ){
     if( getNode(names, token)->mac == 1 ){
-      //getNode(names, token)->mac = 0;
+      getNode(names, token)->mac = 2;
       return 1;
     }
   }
