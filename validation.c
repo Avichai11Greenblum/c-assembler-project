@@ -142,19 +142,19 @@ int validation(FILE *filePtr, LIST *names){
         int j[MAX_LINE_LENGTH];
         int countQM = 0;
         go = 0;
-      
+        
         /* token is now .string so we advance it */
-        token = strtok(NULL, "\t ");
+        token = strtok(NULL, "\n");
         trimTrailing(token);
 
         if( token[0] == '\0' ){
           printf("empty string in line: %d\n", lineNumber);
           result = 0;
         }
+        token = pleaseNofSpace(token);
 
-        /* delete the next 2 lines when done */
-        trimTrailing(line);
-        printf("\ntoken->@%s@\n",token);
+        /* delete the next line when done */
+        printf("\n$$$token->@%s@\n",token);
 
         /* converting the chars to ASCII so we wont have the 
             problem that the first " ends the string */
@@ -173,19 +173,8 @@ int validation(FILE *filePtr, LIST *names){
               result = 0;  
             }
           }
-
-          if( i == (strlen(token) - 1) && j[i] != 34 ){
-            token = strtok(NULL, "\n");
-            if( token[strlen(token) - 1] != 34 ){
-              printf("invalid string in line:%d\n", lineNumber);
-              result = 0;
-              break;
-            }
-            else
-             countQM++;
-          }
         }
-        
+      
         if( result && countQM != 2 ){ 
           printf("invalid string in line:%d\n", lineNumber);
           result = 0;  
@@ -227,7 +216,7 @@ int validation(FILE *filePtr, LIST *names){
       }
     }
   }
-  printf("result = %d\n",result);
+  printf("final result = %d\n",result);
   return result;
 }
 
