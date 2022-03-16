@@ -151,16 +151,16 @@ int validation(FILE *filePtr, LIST *names){
           printf("empty string in line: %d\n", lineNumber);
           result = 0;
         }
-        token = pleaseNofSpace(token);
+        token = cutWhiteChars(token);
 
         /* delete the next line when done */
-        printf("\n$$$token->@%s@\n",token);
+        /*printf("\n$$$token->@%s@\n",token);*/
 
         /* converting the chars to ASCII so we wont have the 
             problem that the first " ends the string */
         for( i=0; i < strlen(token); i++ ){
           j[i] = token[i];
-          printf("index:%d\t char:%c\tvalue:%d\n", i, token[i], j[i]);
+          /*printf("index:%d\t char:%c\tvalue:%d\n", i, token[i], j[i]);*/
         }
 
         /* check the ASCII value of the chars in the array */
