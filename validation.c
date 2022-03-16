@@ -175,17 +175,22 @@ int validation(FILE *filePtr, LIST *names){
           }
 
           if( i == (strlen(token) - 1) && j[i] != 34 ){
-            token = strtok(NULL, "\t \n");
-            printf("muffin -> %s\n", token);
+            token = strtok(NULL, "\n");
+            if( token[strlen(token) - 1] != 34 ){
+              printf("invalid string in line:%d\n", lineNumber);
+              result = 0;
+              break;
+            }
+            else
+             countQM++;
           }
-            
-            
         }
+        
         if( result && countQM != 2 ){ 
           printf("invalid string in line:%d\n", lineNumber);
           result = 0;  
         }
-          
+        
         if( result && token != NULL ){ 
           token = strtok(NULL, "\t \n");
           
