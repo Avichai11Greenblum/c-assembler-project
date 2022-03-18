@@ -186,137 +186,6 @@ LINE *toBinaryCommand(char line[], symbolLink *headOfTable)
 }
 
 
-WORD *deliveryForBinary(commandsStruct *command ,char myStr[], symbolLink *headOfTable)
-{ 
-    int isDest = 1;
-    int i, j;
-    char* token; 
-    WORD* link; 
-    
-    token = strtok(myStr, ", \t\n");
-    link->word[18] = 1;
-    if(command->funct != 0)
-    {
-        int *functInBin;
-        functInBin = decToBinary(command->funct);
-        for(i = 12, j = 0; i < 16; i++, j++)
-            link->word[i] = functInBin[j];
-    }
-
-    if(command->numOfParam == 0)
-        return link;
-
-    while(token != NULL)
-    {
-        /* Delivery 0 */ 
-        if( myStr[0] == '#')
-        {
-            token = strtok(NULL, ", \t\n");
-            continue;
-        }
-
-        /* Delivery 1 */ 
-        else if(find(headOfTable, myStr) != NULL)
-            if(isDest)
-                link->word[0] = 1;
-            else
-                link->word[6] = 1;
-
-        /* Delivery 3 */
-        else if(isARegister(cutWhiteChars(token)) != -1)
-        {   
-            int *regInBinary;
-            regInBinary = decToBinary(isARegister(token));
-            if(isDest)
-            {
-                for(i = 2, j = 0; i < 6; i++, j++)
-                    link->word[i] = *(regInBinary + j);
-                link->word[0] = 1;
-                link->word[1] = 1;
-            }else
-            {
-                for(i = 8, j = 0; i < 12; i++, j++)
-                    link->word[i] = *(decToBinary + j);
-                link->word[6] = 1;
-                link->word[7] = 1;
-            }
-        }
-
-        /*Delivery 2*/
-        else
-        {
-            int reg;
-            int *regInBin;
-            reg = extractRegister(token);
-            regInBin = decToBinary(reg);
-            if(isDest)
-            {
-                for(i = 2, j = 0; i < 6; i++, j++)
-                    link->word[i] = *(regInBin + j);
-                link->word[1] = 1;
-            }else
-            {
-                for(i = 8, j = 0; i < 12; i++, j++)
-                    link->word[i] = *(regInBin + j);
-                link->word[7] = 1;
-            }
-        }
-        isDest = 0;
-        token = strtok(NULL, ",\n");
-    }
-    IC++;
-    return link;
-}
-
-char *cutWhiteChars(char *str)
-{
-    char *newStr;
-    int i, j = 0;
-    newStr = malloc(strlen(str) * sizeof(char));
-    for(i = 0; i < strlen(str); i++)
-    {
-        if(!isspace(*(str + i)))
-        {
-            *(newStr + j) = *(str + j);
-            j++;
-        }
-    }
-    *(newStr + j) = '\0';
-    return newStr;
-}
-
-LINE *toBinaryCommand(char line[], symbolLink *headOfTable)
-{
-    char *command;
-    char *token;
-    WORD *headForLine = (struct WORD*)malloc(sizeof(struct WORD));
-    LINE *node;
-    commandsStruct *commandFound;
-    char *restOfString;
-
-    command = strtok(line, CUT);
-    commandFound = findCommand(command);
-    headForLine->word[commandFound->opcode] = 1;
-    headForLine->word[18] = 1;
-    IC++;
-    node->wordHead = headForLine;
-    restOfString = strtok(NULL, "\n");
-
-    addWord(&headForLine, deliveryForBinary(commandFound, restOfString, headOfTable));
-    
-    token = strtok(restOfString, ",\n");
-
-    while(token != NULL)
-    {
-        if(isARegister(cutWhiteChars(token)) == -1)
-            break;
-        addWord(headForLine, extraWordsToBinary(token));
-        token = strtok(NULL, ",\n");
-    }
-    return node;
-}
-
-
 LINE *firstPass(FILE *filePointer, symbolLink *headOfTable)
 {
     char line[81];
@@ -554,4 +423,34 @@ int *decToBinary(int num){
     }  
 
     return array;
+}
+
+int main(){
+
+  LINE *headOfFile;
+  WORD *link = NULL;
+  FILE *fptr;
+  symbolLink *head;
+
+  fptr = fopen("t.text", "r");
+
+  head = symboleTableCreat(fptr);
+  headOfFile = firstPass( fptr, head );
+
+
+  link = headOfFile->wordHead;
+  while(headOfFile != NULL)
+  {
+    int i;
+    while(link != NULL)
+    {
+      for(i = 0; i < 20; i++)
+      {
+        printf("\t%d\t\n", link->word[i]);
+      }
+      link = link->next;
+    }
+    headOfFile = headOfFile->next;
+  }
+  return 1;
 }

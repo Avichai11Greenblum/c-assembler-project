@@ -5,6 +5,26 @@
 
 #include "utils.h"
 
+void printLineList(LINE *headOfFile)
+{
+  WORD *link;
+  link = headOfFile->wordHead;
+  while(headOfFile != NULL)
+  {
+    int i;
+    while(link != NULL)
+    {
+      for(i = 0; i < 20; i++)
+      {
+        printf("\t%d\t\n", link->word[i]);
+      }
+      link = link->next;
+    }
+    headOfFile = headOfFile->next;
+  }
+}
+
+
 char *cutWhiteChars(char *str)
 {
     char *newstr = malloc(strlen(old)+1);
