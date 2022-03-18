@@ -6,11 +6,10 @@
 #define CUT "\t ,\n"
 #define binToHex_H
 
-/*global vars that are used and modifyed throughout the code*/
-int IC = 100; /*holds the adress of the word in the CPU*/
-int DC = 0; /*holda the num of commands that are in the data image*/
+int IC = 100; /*holds the address of the word in the CPU*/
+int DC = 0; /*holds the num of commands that are in the data image*/
 
-/*an object to hold info of a command*/
+/* custom made struct for our commands */
 typedef struct commandsStruct{
     char commandName[31];
     int opcode;
@@ -42,14 +41,14 @@ commandsStruct ourCommands[] = {
     {"stop", 15, 0, 0}
 };
 
-/*an objest that holds the 20 bytes array for each word in line and a pointer to the next (implemintaion of linked list)*/
+/*an objest that holds the 20 bytes array for each word in line and a pointer to the next (implementation of linked list)*/
 typedef struct WORD
 {
     int word[20];
     struct WORD *next;
 }WORD;
 
-/*an object that holds all info of a lable and a pointer to the next(implemintation of linked list)*/
+/*an object that holds all info of a lable and a pointer to the next(implementation of linked list)*/
 typedef struct symbolLink
 {
 	char name[31];
@@ -82,7 +81,6 @@ void trimTrailing(char * str);
 int isACommand(char line[] );
 commandsStruct *findCommand(char * command);
 void deliveryForBinary(commandsStruct *command ,char myStr[], symbolLink *headOfTable, WORD *headOfFile);
-int move_to_none_white(char *line, int i);
 int allZero(WORD *link);
 void changeWord(WORD *headOfFile, symbolLink *symbolFound, FILE *entFile, FILE *extFile);
 void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable, char *fileName);
@@ -91,7 +89,7 @@ char binToHex(int num []);
 void output(WORD *head);
 
 
-/*a func to creat the output file - in hex base*/
+/*a func to create the output file - in hex base*/
 void output(WORD *head){
   int address = 100;
   FILE *output;
@@ -180,7 +178,7 @@ char binToHex(int num []){
 }
 
 
-/*a func to zero an int array*/
+/* func for initializing the 20 bits in a word to zeros */
 void zeroMe(int word[])
 {
   int i;
@@ -206,7 +204,7 @@ void trimTrailing(char * str){
     str[index + 1] = '\0';
 }
 
-/*a func to creat a linked list of all lables in the file*/
+/*a func to create a linked list from all the lables in the file*/
 symbolLink *symboleTableCreat(FILE *filePointer)
 {
     char line[81];
@@ -272,7 +270,7 @@ struct symbolLink *findSymbol(struct symbolLink *head, char lableName[]) {
     return NULL;
 }
 
-/*a func to check if string is one of the commands*/
+/*a func to check if a string is one of the commands*/
 int isACommand(char line[] ){
   if(!strcmp(line,"mov"))
     return 1;
@@ -321,7 +319,7 @@ commandsStruct *findCommand(char * command)
     return NULL;
 }
 
-
+/* func that distinguishes what address is given and codes it into binary */
 void deliveryForBinary(commandsStruct *command ,char myStr[], symbolLink *headOfTable, WORD *headOfFile)
 { 
     int isDest = 1;
@@ -421,6 +419,7 @@ void deliveryForBinary(commandsStruct *command ,char myStr[], symbolLink *headOf
     }
 }
 
+/* func that removes white chars from a given string */
 char *cutWhiteChars(char *str)
 {
     char *newStr;
@@ -438,16 +437,7 @@ char *cutWhiteChars(char *str)
     return newStr;
 }
 
-int move_to_none_white(char *line, int i)
-{
-    for(; i < strlen(line); i++)
-    {
-        if(!isspace(line[i]))
-            return i;
-    }
-    return i;
-}
-
+/* func that receives a command sentence and codes it into binary code */
 void toBinaryCommand(char line[], symbolLink *headOfTable, WORD *headOfFile)
 {
     char *command, *token, *restOfString;
@@ -486,6 +476,7 @@ void toBinaryCommand(char line[], symbolLink *headOfTable, WORD *headOfFile)
     }
 }
 
+/* func that goes over the given input and codes it into binary excluding lables */
 WORD *firstPass(FILE *filePointer, symbolLink *headOfTable)
 {
     char line[81];
@@ -530,6 +521,7 @@ WORD *firstPass(FILE *filePointer, symbolLink *headOfTable)
     return headOfFile;
 }
 
+/* func that receives a instruction sentence and codes it into binary code */
 void toBinaryGuidance(char line[], WORD *headOfFile)
 {
     char *guidWord, *param = NULL;
@@ -575,6 +567,7 @@ void toBinaryGuidance(char line[], WORD *headOfFile)
     }
 }
 
+/* func that codes each operand to binary based on the given addressing and line type */
 void extraWordsToBinary(char *param, WORD *headOfFile, symbolLink *headOfTable)
 {
     WORD *link = (struct WORD*)malloc(sizeof(struct WORD));
@@ -603,11 +596,14 @@ void extraWordsToBinary(char *param, WORD *headOfFile, symbolLink *headOfTable)
     {
       WORD *link1 = (struct WORD*)malloc(sizeof(struct WORD));
       WORD *link2 = (struct WORD*)malloc(sizeof(struct WORD));
+      zeroMe(link1->word);
+      zeroMe(link2->word);
       addWord(headOfFile, link1);
       addWord(headOfFile, link2);
     }
 }
 
+/* func that converts a char to the first 16 out of the 20 bits */
 WORD *charToBinary(char ch)
 {
   WORD *link =(struct WORD*)malloc(sizeof(struct WORD));
@@ -621,6 +617,7 @@ WORD *charToBinary(char ch)
   return link;
 }
 
+/* func that adds a WORD type struct to a given linked list */
 void addWord(WORD *head, WORD *link)
 {
     while(head->next != NULL)
@@ -630,6 +627,7 @@ void addWord(WORD *head, WORD *link)
     IC++;
 }
 
+/* func that checks if a given operand in string type is a number or not */
 int isNum(char *str)
 {
     if(str[0] == '#')
@@ -637,6 +635,7 @@ int isNum(char *str)
     return 0;
 }
 
+/* func that receives a string that has a register in it and extracts it's number out */
 int extractRegister(char * param)
 {
     char *token;
@@ -645,6 +644,7 @@ int extractRegister(char * param)
     return isARegister(token);
 } 
 
+/* func that checks if a given string is one of the valid registers and if so returns it's number */
 int isARegister(char line [])
 {
   if(!strcmp(line,"r0"))
@@ -682,6 +682,7 @@ int isARegister(char line [])
   return -1;
 }
 
+/* func that converts a given int number to the required binary format */
 int *decToBinary(int num){
     int *array, i;
     array = calloc(16, sizeof(int));
@@ -711,6 +712,7 @@ int *decToBinary(int num){
     return array;
 }
 
+/* boolean func that checks if all the 20 bits of a WORD have the value 0 */
 int allZero(WORD *link)
 {
   int i;
@@ -721,6 +723,7 @@ int allZero(WORD *link)
   return 1;
 }
 
+/* func that changes a word */
 void changeWord(WORD *headOfFile, symbolLink *symbolFound, FILE *entFile, FILE *extFile)
 {
   int i, counter = 100;
@@ -760,6 +763,7 @@ void changeWord(WORD *headOfFile, symbolLink *symbolFound, FILE *entFile, FILE *
   }
 }
 
+/* func that goes over the input for the second time and adds the needed extra words for all the labels and creates the entry and extern files */
 void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable, char *fileName)
 {
   char line[81];
@@ -802,6 +806,7 @@ void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable, ch
   }
 }
 
+/* func that free the memory stormage from a given WORD */
 void freeList(WORD *head)
 {
   WORD *current = head;
@@ -815,6 +820,7 @@ void freeList(WORD *head)
   }
 }
 
+/* func that free the memory stormage from a given LIST */
 void freeList2(symbolLink *head)
 {
   symbolLink *current = head;
@@ -828,6 +834,7 @@ void freeList2(symbolLink *head)
   }
 }
 
+/* a func that we do whatever we want in it */
 int main(){
 
     WORD *headOfFile = NULL;
