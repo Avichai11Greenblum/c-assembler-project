@@ -6,10 +6,11 @@
 #define CUT "\t ,\n"
 #define binToHex_H
 
+/*global vars that are used and modifyed throughout the code*/
+int IC = 100; /*holds the adress of the word in the CPU*/
+int DC = 0; /*holda the num of commands that are in the data image*/
 
-int IC = 100;
-int DC = 0;
-
+/*an object to hold info of a command*/
 typedef struct commandsStruct{
     char commandName[31];
     int opcode;
@@ -17,6 +18,7 @@ typedef struct commandsStruct{
     int numOfParam;     
 }commandsStruct;
 
+/*an array that holds all the info of all commands*/
 commandsStruct ourCommands[] = {
     {"mov", 0, 0, 2},
     {"cmp", 1, 0, 2},
@@ -40,23 +42,27 @@ commandsStruct ourCommands[] = {
     {"stop", 15, 0, 0}
 };
 
+/*an objest that holds the 20 bytes array for each word in line and a pointer to the next (implemintaion of linked list)*/
 typedef struct WORD
 {
     int word[20];
     struct WORD *next;
 }WORD;
 
+/*an object that holds all info of a lable and a pointer to the next(implemintation of linked list)*/
 typedef struct symbolLink
 {
 	char name[31];
 	int adress;
-	int placing; /* 0-code image, 1-data image */
 	int ext; 
-  int ent;/* 0-internal, 1-entry, 2-extern */
+  int ent;
+  int times;
 	struct symbolLink *next;
 
 }symbolLink;
 
+
+/*funcs declarations*/
 symbolLink * symboleTableCreat(FILE *filePointer);
 symbolLink *addSymbol(symbolLink *head, char lableName[]);
 struct symbolLink* findSymbol(struct symbolLink *head, char lableName[]);
@@ -78,19 +84,20 @@ commandsStruct *findCommand(char * command);
 void deliveryForBinary(commandsStruct *command ,char myStr[], symbolLink *headOfTable, WORD *headOfFile);
 int move_to_none_white(char *line, int i);
 int allZero(WORD *link);
-void changeWord(WORD *headOfFile, symbolLink *symbolFound);
-void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable);
-
+void changeWord(WORD *headOfFile, symbolLink *symbolFound, FILE *entFile, FILE *extFile);
+void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable, char *fileName);
 void binToSpecial (int num [],int address,FILE* output);
 char binToHex(int num []);
 void output(WORD *head);
 
+
+/*a func to creat the output file - in hex base*/
 void output(WORD *head){
   int address = 100;
   FILE *output;
   WORD *ptr = head;
   output = fopen("output.ob","w");
-  fprintf(output,"\t%d\t%d\n",IC-100-DC,DC);
+  fprintf(output,"\t\t\t%d\t%d\n",IC-100-DC,DC);
   while(ptr != NULL && address <= IC){
     binToSpecial(ptr->word,address,output);
     ptr = ptr->next;
@@ -98,6 +105,7 @@ void output(WORD *head){
   }
 }
 
+/*a func to get the num in he special base specified*/
 void binToSpecial (int num [],int address,FILE* output){
   int num1 [] = {0,0,0,0};
   int num2 [] = {0,0,0,0};
@@ -134,6 +142,7 @@ void binToSpecial (int num [],int address,FILE* output){
   }
 }
 
+/*a func to convert a num in binary to hex base*/
 char binToHex(int num []){
   if(num[3] == 0 && num[2] == 0 && num[1] == 0 && num[0] == 0) 
     return '0';
@@ -170,6 +179,8 @@ char binToHex(int num []){
   return '\0';
 }
 
+
+/*a func to zero an int array*/
 void zeroMe(int word[])
 {
   int i;
@@ -177,6 +188,7 @@ void zeroMe(int word[])
     word[i] = 0;
 }
 
+/*a func to trim the white chars in the end of a string*/
 void trimTrailing(char * str){
     int index = -1;
     int i;
@@ -194,6 +206,7 @@ void trimTrailing(char * str){
     str[index + 1] = '\0';
 }
 
+/*a func to creat a linked list of all lables in the file*/
 symbolLink *symboleTableCreat(FILE *filePointer)
 {
     char line[81];
@@ -221,12 +234,16 @@ symbolLink *symboleTableCreat(FILE *filePointer)
             if(lableFound == NULL)
             {
                 head = addSymbol(head, token);
+                head->ent = 2;
+            } else{
+              lableFound->ent = 2;
             }
         }
     }
     return head;
 }
 
+/*a func to add a lable to the linked list*/
 symbolLink *addSymbol(symbolLink *head, char lableName[])
 {
     struct symbolLink *link = (struct symbolLink *) malloc (sizeof(struct symbolLink));
@@ -236,24 +253,26 @@ symbolLink *addSymbol(symbolLink *head, char lableName[])
       return link;
     }
     link->ent = 1;
+    link->times = 1;
     link->next = head;
     head = link;
     return head;
 }
 
+/*a func to find an object in the list- if found- returns the object - else - returns null*/
 struct symbolLink *findSymbol(struct symbolLink *head, char lableName[]) {
     struct symbolLink* current = head;
     if(head == NULL)
         return NULL;
     while(current != NULL)  
         if(!strcmp(current->name, lableName))
-
           return current;
         else
           current = current->next;
     return NULL;
 }
 
+/*a func to check if string is one of the commands*/
 int isACommand(char line[] ){
   if(!strcmp(line,"mov"))
     return 1;
@@ -290,6 +309,7 @@ int isACommand(char line[] ){
   return 0;
 }
 
+/*a func to get the command object that contains the command's info*/
 commandsStruct *findCommand(char * command)
 {
     int i = 0;
@@ -299,8 +319,8 @@ commandsStruct *findCommand(char * command)
         	return &ourCommands[i];
     }
     return NULL;
-
 }
+
 
 void deliveryForBinary(commandsStruct *command ,char myStr[], symbolLink *headOfTable, WORD *headOfFile)
 { 
@@ -464,13 +484,6 @@ void toBinaryCommand(char line[], symbolLink *headOfTable, WORD *headOfFile)
       if(!(*(cutWhiteChars(temp)) == 'r' && isARegister(cutWhiteChars(temp)) != -1))
           extraWordsToBinary(cutWhiteChars(temp), headOfFile, headOfTable);
     }
-    /*while(token != NULL)
-    {
-        if(!(*(cutWhiteChars(token)) == 'r' && isARegister(cutWhiteChars(token)) != -1))
-          extraWordsToBinary(cutWhiteChars(token), headOfFile);
-        token = strtok(NULL, "\n\t\0 ");
-        printf("token is in while->%s@\n", token);
-    }*/
 }
 
 WORD *firstPass(FILE *filePointer, symbolLink *headOfTable)
@@ -508,7 +521,7 @@ WORD *firstPass(FILE *filePointer, symbolLink *headOfTable)
       {
         token = strtok(NULL, CUT);
         lable = findSymbol(headOfTable, token);
-        lable->ent = 1;
+        lable->ent = 2;
       }else if(isACommand(cutWhiteChars(token)))
         toBinaryCommand(lineCopy, headOfTable, headOfFile);
       else
@@ -701,16 +714,16 @@ int *decToBinary(int num){
 int allZero(WORD *link)
 {
   int i;
-  for( i = 0; i < 20; i++)
+  for( i = 0; i < 20; i++){
     if(link->word[i] != 0)
       return 0;
+  }
   return 1;
 }
 
-void changeWord(WORD *headOfFile, symbolLink *symbolFound)
+void changeWord(WORD *headOfFile, symbolLink *symbolFound, FILE *entFile, FILE *extFile)
 {
-  int i;
-
+  int i, counter = 100;
   WORD *current = headOfFile->next;
   while(current !=NULL)
   {
@@ -718,66 +731,50 @@ void changeWord(WORD *headOfFile, symbolLink *symbolFound)
     {
       if(symbolFound->ext == 1)
       {
-      printf("in extern->%s\n", symbolFound->name);
-      current->word[16] = 1;
-      current->next->word[16] = 1;
-      } else if(symbolFound->ent == 1)
-
-  while(headOfFile !=NULL)
-  {
-    if(allZero(headOfFile))
-    {
-      if(symbolFound->visibility == 2)
+        current->word[16] = 1;
+        current->next->word[16] = 1;
+        if(symbolFound->times == 1)
+        {
+          fprintf(extFile, "%s\tBASE\t%d\n", symbolFound->name, counter);
+          fprintf(extFile, "%s\tOFFSET\t%d\n\n", symbolFound->name, counter + 1);
+          symbolFound->times++;
+        }
+      } else if(symbolFound->ent == 1 || symbolFound->ent == 2)
       {
-      headOfFile->word[16] = 1;
-      headOfFile->next->word[16] = 1;
-      } else
-
-      {
-      int offset = symbolFound->adress % 16;
-      int base = symbolFound->adress - offset;
-      int *offsetInBin, *baseInBin;
-
-      printf("in entry\n");
-      current->word[17] = 1;
-      current->next->word[17] = 1;
-      baseInBin = decToBinary(base);
-      for(i = 0; i < 16; i++)
-        current->word[i] = *(baseInBin + i);
-      offsetInBin = decToBinary(offset);
-      for(i = 0; i < 16; i++)
-        current->next->word[i] = *(offsetInBin + i);
+        int offset = symbolFound->adress % 16;
+        int base = symbolFound->adress - offset;
+        int *offsetInBin, *baseInBin;
+        current->word[17] = 1;
+        current->next->word[17] = 1;
+        baseInBin = decToBinary(base);
+        for(i = 0; i < 16; i++)
+          current->word[i] = *(baseInBin + i);
+        offsetInBin = decToBinary(offset);
+        for(i = 0; i < 16; i++)
+          current->next->word[i] = *(offsetInBin + i);
       }
       break;
     }
+    counter++;
     current = current->next;
-
-      headOfFile->word[17] = 1;
-      headOfFile->next->word[17] = 1;
-      baseInBin = decToBinary(base);
-      for(i = 0; i < 16; i++)
-        headOfFile->word[i] = *(baseInBin + i);
-      offsetInBin = decToBinary(offset);
-      for(i = 0; i < 16; i++)
-        headOfFile->next->word[i] = *(offsetInBin + i);
-      }
-    }
-    headOfFile = headOfFile->next;
-
   }
 }
 
-void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable)
+void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable, char *fileName)
 {
   char line[81];
   char *token;
-
+  FILE *extFile, *entFile;
   int numOfParsLeft;
   commandsStruct *cmnd;
   symbolLink *symbolFound = NULL;
+  symbolLink *current = headOfTable;
+  char fileNameCopy[10];
+  strcpy(fileNameCopy, fileName);
+  extFile = fopen(strcat(fileName, ".ext"), "w");
+  entFile = fopen(strcat(fileNameCopy, ".ent"), "w");
   while(fgets(line, 81, filePointer))
   {
-
     token = strtok(line, ": \t,");
     if(findSymbol(headOfTable, token) != NULL)
       token = strtok(NULL, " \t,");
@@ -787,25 +784,47 @@ void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable)
       numOfParsLeft = cmnd->numOfParam;
       while(numOfParsLeft > 0)
       {
-        printf("command is->%s@\n", cutWhiteChars(token));
         token = strtok(NULL, "[ \t,");
-        printf("token is->%s@\n", cutWhiteChars(token));
         if((symbolFound = findSymbol(headOfTable, cutWhiteChars(token))) != NULL)
-          changeWord(headOfFile, symbolFound);
+          changeWord(headOfFile, symbolFound, entFile, extFile);
         numOfParsLeft--;
       }
-
-  symbolLink *symbolFound = NULL;
-  while(fgets(line, 81, filePointer))
-  {
-    token = strtok(line, " \t,");
-    if(isACommand(token))
-    {
-      token = strtok(NULL, " \t,");
-      if((symbolFound = findSymbol(headOfTable, token)) != NULL)
-        changeWord(headOfFile, symbolFound);
-
     }
+  }
+  while(current != NULL)
+  {
+    if(current->ent == 2)
+    {
+      int offset = current->adress % 16;
+      fprintf(entFile, "%s,%d,%d\n", current->name, current->adress - offset, offset);
+    }
+    current = current->next;
+  }
+}
+
+void freeList(WORD *head)
+{
+  WORD *current = head;
+  while(head != NULL)
+  {
+    while(current != NULL)
+    {
+      current = current->next;
+    }
+    free(current);
+  }
+}
+
+void freeList2(symbolLink *head)
+{
+  symbolLink *current = head;
+  while(head != NULL)
+  {
+    while(current != NULL)
+    {
+      current = current->next;
+    }
+    free(current);
   }
 }
 
@@ -818,6 +837,7 @@ int main(){
     int k, j;
     int bla[20];
     int lines = 0;
+    char fileName[10] = "t";
     fptr = fopen("t.txt", "r");
 
     head = symboleTableCreat(fptr);
@@ -829,7 +849,7 @@ int main(){
 
     fp = fopen("t.txt", "r");
 
-    secondPass(fp, headOfFile, head);
+    secondPass(fp, headOfFile, head, fileName);
     headOfFile = headOfFile->next;
     output(headOfFile);
     for(k = 19, j = 0; k >= 0; k--, j++)
