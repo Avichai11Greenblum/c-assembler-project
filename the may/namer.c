@@ -810,13 +810,14 @@ void secondPass(FILE *filePointer, WORD *headOfFile, symbolLink *headOfTable, ch
 void freeList(WORD *head)
 {
   WORD *current = head;
-  while(head != NULL)
+  WORD *nextOne = head->next;
+
+  while(current != NULL)
   {
-    while(current != NULL)
-    {
-      current = current->next;
-    }
     free(current);
+    current = nextOne;
+    if( current != NULL)
+      nextOne = current->next;
   }
 }
 
@@ -824,13 +825,14 @@ void freeList(WORD *head)
 void freeList2(symbolLink *head)
 {
   symbolLink *current = head;
-  while(head != NULL)
+  symbolLink *nextOne = head->next;
+
+  while(current != NULL)
   {
-    while(current != NULL)
-    {
-      current = current->next;
-    }
     free(current);
+    current = nextOne;
+    if( current != NULL)
+      nextOne = current->next;
   }
 }
 
