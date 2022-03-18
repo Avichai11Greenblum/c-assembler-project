@@ -17,6 +17,40 @@ int fileEndingValid( char *fileName ){
     return 0;
 }
 
+int execute(char * fileName){
+  char * fileNameCopy;
+  char * copy2;
+  FILE *filePtr;
+  LIST *l;
+  char * token;
+  WORD *headOfFile = NULL;
+  symbolLink *head;
+
+  filePtr = fopen(fileName, "r");
+  l = validNames(filePtr, fileName);
+  fseek(filePtr, 0, SEEK_SET);
+  
+  if(!validation( filePtr , l))
+    return 0;
+
+  strcpy( copy2, fileName );
+  token = strtok(copy2, ".as");
+  fseek(filePtr, 0, SEEK_SET);
+  preProcessing(filePtr, token);
+  fclose(filePtr); 
+
+  filePtr = fopen(strcat(token, ".ob"), "r");
+  head = symboleTableCreat(filePtr);
+  fseek(filePtr, 0, SEEK_SET);
+  headOfFile = firstPass(filePtr, head);
+  fseek(filePtr, 0, SEEK_SET);
+  secondPass(filePtr, headOfFile, head, token);
+  headOfFile = headOfFile->next;
+  output(headOfFile);
+  freeList(headOfFile);
+  freeList2(head);
+}
+
 int main(int argc, char *argv[]){
 
   int i;
@@ -30,7 +64,8 @@ int main(int argc, char *argv[]){
   for( i=1; i < argc; i++){
     strcpy(fileName, argv[i]);
     if( fileEndingValid(fileName) )
-      execute(fileName);
+      if(!execute(fileName))
+        printf("because of the errorrs the file did not compile...\n");
     else
       printf("file: %s does not ends with \".as\"  ...\n", fileName);
   }
