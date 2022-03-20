@@ -11,7 +11,7 @@
   int mac;
   int ext;
   int ent;
-  int labDec;
+  int labDec; 
   struct NODE *next;
 } NODE;
 
@@ -23,7 +23,9 @@ void insert(LIST*,char[]);
 int has(LIST*,char[]);
 LIST* newList();
 void printList(LIST *l);
-void freeList(LIST*); /* not exist yet */
-
 NODE* getNode(LIST *l, char name[]);
+
+//void freeList(LIST*); /* not exist yet */
+
+
 #endif
