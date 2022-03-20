@@ -26,10 +26,4 @@ void printList(LIST *l);
 void freeList(LIST*); /* not exist yet */
 
 NODE* getNode(LIST *l, char name[]);
-/*
-int getMac(LIST *l,char name []);
-int getExt(LIST *l,char name []);
-int getEnt(LIST *l,char name []);
-int getLabDec(LIST *l,char name []);
-*/
 #endif
