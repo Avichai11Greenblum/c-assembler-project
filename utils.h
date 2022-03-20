@@ -1,62 +1,39 @@
+#ifndef _utils_H_
+#define _utils_H_
 #include <stdio.h>
 #include <stdlib.h>
 
-#define COMMAND_MAX_LENGTH 31
+#define MAX_LABEL_LENGTH 31
 #define MAX_LINE_LENGTH 81
 #define MAX_COMMANDS_IN_MACRO 6
 
+
+
+/* i think this is not belong here*/
 typedef struct commandsStruct{
-    char commandName[COMMAND_MAX_LENGTH];
+    char commandName[MAX_LABEL_LENGTH];
     int opcode;
     int funct;
     int numOfParam;
 }commandsStruct;
 
-typedef struct MACRO
-{
-    char * macroName;
-    char * macroCommands[6];
-    int numOfCommands;
-    struct MACRO *next; 
-}MACRO;
-
-typedef struct symbolLink
-{
-	char name[31];
-	int adress;
-	int placing; /* 0-code image, 1-data image */
-	int visibility; /* 0-internal, 1-entry, 2-extern */
-	struct symbolLink *next;
-
-}symbolLink;
-
-typedef struct WORD
-{
-    int word[20];
-    WORD *next;
-}WORD;
-
-struct MACRO *head = NULL;
+int isNum(char *str);
+char *cutWhiteChars(char *str);
 
 int move_to_none_white(char line[], int i);
 int skip(char line[]);
-void preProcessing(FILE *fileName, char *nameOfFile);
-MACRO* find(MACRO *head, char * macroName);
-int getWord(char *word, char line[], int i);
-MACRO *push(char *macroName, char *macroCommands[], int numOfCommands);
-
-int isNameOk(char line []);
-int isARegister(char []);
+int isAIntNum(char []);
 int isACommand(char []);
-int isANaturalNum(char);
-int giveTheLastNoneWhiteIndex(char line[]);
-int countWords(char line []);
-
-symbolLink * symboleTableCreat(FILE *filePointer);
-symbolLink *pushLable(symbolLink *head, char lableName[]);
-struct symbolLink* findLable(struct symbolLink *head, char lableName[]);
-int isLableDec(char *lable);
+int isARegister(char []);
+int isNameOk(char line []);
 commandsStruct *findCommand(char * command);
-int isANum(char *param);
-char *cutWhiteChars(char *str);
+int isLableDec(char *lable);
+int countWords(char line []);
+void trimTrailing(char * str);
+int countCommas(char line []);
+int isCurNumOfWords(char buffer[], int a);
+int isValidCommas(int num, char str[]);
 
+//int getWord(char *word, char line[], int i);
+//int isANum(char *param);
+#endif
