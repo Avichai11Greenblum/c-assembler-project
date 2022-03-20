@@ -5,28 +5,16 @@
 
 #include "utils.h"
 
-void printLineList(LINE *headOfFile)
+/* func that checks if a given operand in string type is a number or not */
+int isNum(char *str)
 {
-  WORD *link;
-  link = headOfFile->wordHead;
-  while(headOfFile != NULL)
-  {
-    int i;
-    while(link != NULL)
-    {
-      for(i = 0; i < 20; i++)
-      {
-        printf("\t%d\t\n", link->word[i]);
-      }
-      link = link->next;
-    }
-    headOfFile = headOfFile->next;
-  }
+    if(str[0] == '#')
+      return 1;
+    return 0;
 }
 
 
-char *cutWhiteChars(char *str)
-{
+char * cutWhiteChars( char *old ){
     char *newstr = malloc(strlen(old)+1);
     
     char *np = newstr, *op = old;
@@ -37,6 +25,7 @@ char *cutWhiteChars(char *str)
     
     return newstr;
 }
+
 commandsStruct ourCommands[] = {
     
     /* name, opcode, funct, num of param */
@@ -80,34 +69,16 @@ int move_to_none_white(char *line, int i)
 }
 
 
+/* check if a line is comment or empty in assembly */
 int skip(char line[])
 {
     int i = 0;
     i = move_to_none_white(line, i);
-    if(line[i] == ';' || line[i] == '\n')
+    if(line[i] == '\0' || line[i] == ';' || line[i] == '\n')
         return 1;
     return 0;
 }
 
-MACRO *push(char *macroName, char *macroCommands[], int numOfCommands){
-    int i = 0;
-    struct MACRO *link = (struct MACRO*) malloc(sizeof(struct MACRO));
-    strcpy(link->macroName, macroName);
-    for(; i < 6; i++){
-        strcpy(link->macroCommands[i], macroCommands[i]);
-    }
-    link->numOfCommands = numOfCommands;
-    link->next = head;
-    head = link;
-    return head;
-}
-
-int isANaturalNum(char c){
-  if(c <= '9' && c>= '0'){
-    return 1;
-  }
-  return 0;
-}
 
 int isAIntNum(char input[]){
   int i = move_to_none_white(input,0);
@@ -125,13 +96,6 @@ int isAIntNum(char input[]){
     i++;
   }
   return 1;
-}
-
-int isANaturalNum(char c){
-  if(c <= '9' && c>= '0'){
-    return 1;
-  }
-  return 0;
 }
 
 int isACommand(char line []){
@@ -210,11 +174,11 @@ int isARegister(char line[]){
 
 int isNameOk(char line []){
   int i = 0;
-  if(!isalpha(line[i]) || isARegister(line) || isACommand(line)){
+  if(!isalpha(line[i]) || isARegister(line) != -1 || isACommand(line) || strlen(line) > MAX_LABEL_LENGTH){
     return 0;
   }
   while(line[i] != '\0'){
-    if(!isalpha(line[i]) && !isANaturalNum(line[i])){
+    if(!isalpha(line[i]) && !isdigit(line[i])){
       return 0;
     }
     i++;
@@ -227,8 +191,8 @@ commandsStruct *findCommand(char * command)
     int i = 0;
     for(; i < 17; i++)
     {
-        if(!strcmp(command, ourCommands[i]->commandName))
-        return ourCommands[i];
+        if(!strcmp(command, ourCommands[i].commandName))
+        return &ourCommands[i];
     }
     return NULL;
 }
@@ -240,25 +204,6 @@ int isLableDec(char *lable)
     return 0;
 }
 
-int isANum(char *param)
-
-{
-    if(param[0] == '#')
-        return 1;
-    return 0;
-}
-
-int giveTheLastNoneWhiteIndex(char line[]){
-  int i = 1;
-  int firstiter = 1;
-  if(!isspace(line[strlen(line) - 1])){
-    return strlen(line) - 1;
-  }
-  while( !isspace(line[strlen(line) - i ]) ){
-    i++;
-  }
-  return (strlen(line)-i-2);
-}
 
 int countWords(char line []){
   int i = 0, word = 0, inWord = 0;
@@ -279,3 +224,77 @@ int countWords(char line []){
 }
 
 
+/* delete white space in the end of a string */
+void trimTrailing(char * str){
+    int index = -1;
+    int i;
+
+    i = 0;
+    while(str[i] != '\0')
+    {
+        if(str[i] != ' ' && str[i] != '\t' && str[i] != '\n')
+        {
+            index= i;
+        }
+
+        i++;
+    }
+    str[index + 1] = '\0';
+}
+
+
+/* count commas */
+int countCommas(char line []){
+  int i = 0;
+  int commas = 0;
+  while(line[i] != '\0'){
+    if (line[i] == ',')
+      commas++;
+    i++;
+  }
+  return commas;
+}
+
+/* check if the numbers of words in a given number is the same as a given integer number */
+/* delete? */
+int isCurNumOfWords(char line[], int a){
+  if(countWords(line) < a){
+  }
+  if(countWords(line) > a){
+  }
+  if(countWords(line) == a){
+    return 1;
+  }
+  return 0;
+}
+
+/* check if the number of a commas in a given string is equal to a given number */
+int isValidCommas(int num, char str[]){
+  int i = 0;
+  int count = 0;
+  int inARow = 0;
+  while(str[i]!='\0'){
+    /* there is two commas in a row */
+    if(str[i] == ',' && inARow == 1){
+      return 0;
+    }
+    /* found a commma char and increase the counter */
+    if(str[i] == ',' && inARow == 0){
+      count++;
+      inARow = 1;
+    }
+    if(str[i] != ',' && !isspace(str[i]) ){
+      inARow = 0;
+    }
+    i++;
+  }
+  /* the string has same amount of commas as the given num */
+  if(count == num){
+    return 1;
+  }
+  if(count < num){
+  }
+  if(count > num){
+  }
+  return 0;
+}
