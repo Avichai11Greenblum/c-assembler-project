@@ -1,15 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
-#include "utils.h"
-#include "list.h"
 #include "validation.h"
 
-#define parse_words "  \t\n"
-#define parse_delivery " ,\t\n["
-#define parse_commands " ,\t\n:"
 
 /* check if a given code is valid in assembly */
 int validation(FILE *filePtr, LIST *names){
@@ -28,14 +18,13 @@ int validation(FILE *filePtr, LIST *names){
     strcpy(lineCopy, line);
     token = strtok(lineCopy, parse_words); 
     int go = 1;
-    /* the limit of 200 lines is for the makinng of the code */
+    
     /* for every word */
-    while( token != NULL && lineNumber <= 200 ){
-      if( !wordNumber == 0 )
+    while( token != NULL){
+      if( wordNumber != 0 )
         token = strtok(NULL, parse_words);
       
       wordNumber++;
-      //int go = 1;
       /* Label Declaration */
       if( wordNumber == 1 && token[strlen(token)-1] == ':' ){
         if(!checkForLabelAtBegining(names, token, lineNumber)){
@@ -154,13 +143,11 @@ int validation(FILE *filePtr, LIST *names){
         token = cutWhiteChars(token);
 
         /* delete the next line when done */
-        /*printf("\n$$$token->@%s@\n",token);*/
 
         /* converting the chars to ASCII so we wont have the 
             problem that the first " ends the string */
         for( i=0; i < strlen(token); i++ ){
           j[i] = token[i];
-          /*printf("index:%d\t char:%c\tvalue:%d\n", i, token[i], j[i]);*/
         }
 
         /* check the ASCII value of the chars in the array */
@@ -208,7 +195,6 @@ int validation(FILE *filePtr, LIST *names){
       }
       /* if the line is unrecognizable */
       if(go){
-        //printf("token2 = %s in line %d\n",token,lineNumber);
         go = 0;
         printf("unrecognizable line in line %d\n",lineNumber);
         result = 0;
@@ -216,14 +202,10 @@ int validation(FILE *filePtr, LIST *names){
       }
     }
   }
-  printf("final result = %d\n",result);
   return result;
 }
 
-/* this function is the first pass that parses the
-words and filter the special words words */
-
-  /*check if a given command line is valid */
+  /* check if a given command line is valid */
 int isRight(char line [], LIST *names){
   char command [MAX_LABEL_LENGTH] = "-1";
   char firstOp [MAX_LABEL_LENGTH] = "-1";
@@ -263,6 +245,7 @@ int isRight(char line [], LIST *names){
   return validOperands(command,firstOp,secondOp,names);
 }
 
+
 /* returns the valid macro and label as a list */
 LIST *validNames(FILE *fileName, char *nameOfFile){
   char line[MAX_LINE_LENGTH];
@@ -277,19 +260,19 @@ LIST *validNames(FILE *fileName, char *nameOfFile){
       token = strtok(lineCopy, parse);
 
       /* macro */
-      if( !strcmp(token, "macro") && isCurNumOfWords(line,2)){
-        token = strtok(NULL, parse); 
+      if( !strcmp(token, "macro") && countWords(line) == 2){
+        token = strtok(NULL, parse);
         insertMa(token,names);
       }
 
       /* extern */
-      if( !strcmp(token, ".extern") && isCurNumOfWords(line,2)){
+      if( !strcmp(token, ".extern") && countWords(line) == 2){
         token = strtok(NULL, parse);
         insertEx(token,names);
       }
 
       /* entry */
-      if( !strcmp(token, ".entry") && isCurNumOfWords(line,2)){
+      if( !strcmp(token, ".entry") && countWords(line) == 2){
         token = strtok(NULL, parse);
         insertEn(token,names);
       }
@@ -302,93 +285,6 @@ LIST *validNames(FILE *fileName, char *nameOfFile){
     }
   }
   return names;
-}
-
-
-/* given a command find how many operands */
-/* delete? */
-int howManyOperands( char commandName[] ){
-  if( !strcmp(commandName, "mov") || !strcmp(commandName, "cmp") || !strcmp(commandName, "add") || !strcmp(commandName, "sub") || !strcmp(commandName, "lea") ){
-    return 2;
-  }
-
-  if( !strcmp(commandName, "rts") || !strcmp(commandName, "stop") )
-    return 0;
-
-  if( !strcmp(commandName, "clr") || !strcmp(commandName, "not") || !strcmp(commandName, "inc") || !strcmp(commandName, "dec") || !strcmp(commandName, "jmp") || !strcmp(commandName, "bne") || !strcmp(commandName, "jsr") || !strcmp(commandName, "red") || !strcmp(commandName, "prn") ){
-    return 1;
-  }
-
-  return -1;
-}
-
-/* can delete it */
-int isCommandLegit( char lineCopy[], int operandsNum, int wordNumber, LIST *names, int lineNumber ){
-  char *token;
-  char *command_name;
-  int operand_index = 0;
-  int result = 1;
-  char SecondOp [30] = "-1";
-  char firstOp [30] = "-1";
-  //printf("1\n");
-  trimTrailing(lineCopy);
-  //printf("lineCopy = %s\n",lineCopy);
- // printf("wordNumber = %d\n",wordNumber);
-  //printf("operandsNum = %d\n",operandsNum);
-  if(wordNumber == 1 || wordNumber == 2){
-    int i, iter;
-    int wordsInLine = countWords(lineCopy);
-
-    /* checking valid though the number of lines */
-    if(wordNumber == 2)
-      //token = strtok( lineCopy, "\n ," );
-      wordsInLine--; /* for comparing it later to count commas */
-    
-    if( wordsInLine - 1 != operandsNum){
-      printf("too many or too few words in line: %d\n", lineNumber);
-      return 0;
-    }
-
-    /* token initialization and advancement */
-    token = strtok( lineCopy, "\n ," );
-    //printf("1token = %s\n",token);
-    if( isACommand(token) ){
-      trimTrailing(token);
-      strcpy(command_name, token);
-      iter = 1;
-    }
-      
-    else
-      iter = 2;
-
-    for( i = 0; i < iter; i++ ){
-      token = strtok( NULL, "\n ," );
-
-      if( token == NULL )
-        result = 0;
-    }
-    while( result && token != NULL ){
-      printf("token = %s\n",token);
-      int delivery_num;
-
-      trimTrailing(token);
-      operand_index++;
-
-      if(operand_index == 1){
-        strcpy(firstOp,token);
-      }
-      if(operand_index == 2){
-        strcpy(SecondOp,token);
-      }
-      //printf("operand index %d is->%s@\n", operand_index,token);
-      token = strtok( NULL, "\n ," ); 
-    }
-     printf("firstOp = %s\n",firstOp);
-     printf("SecondOp = %s\n",SecondOp);
-     printf("command_name = %s\n",command_name);
-
-  }
-  return 1;
 }
 
 /* func to decide which delivery it is
@@ -437,99 +333,7 @@ int whichDelivery(char myStr[], LIST *names){
     return -1;
 }
 
-/* delete it? */
-int isAGuidance(char line []){
-  LIST *l = newList();
-  insert(l,".data");
-  insert(l,".string");
-//insert(l,".entry");
-//  insert(l,".extern");
-  return has(l,line);
-}
 
-/* delete it? */
-int isACommentOrEmpty(char line []){
-  int i = 0;
-  while(line[i] != '\0'){
-    if(isWhiteSpace(line[i]))
-      i++;
-    else if(line[i] == ';')
-      return 1;
-    else
-      return 0;
-  }
-  return 1;
-}
-
-/* delete it? */
-char* getRidOfFirstChar(char myStr[]){
-  return myStr + 1;
-}
-
-/* check if a given string is a command */
-int isACommand(char token[] ){
-  if( !strcmp(token,"mov") || !strcmp(token,"cmp") || !strcmp(token,"add") || !strcmp(token,"sub") || !strcmp(token,"lea") || !strcmp(token,"clr") || !strcmp(token,"not") || !strcmp(token,"inc") || !strcmp(token,"dec") || !strcmp(token,"jmp") || !strcmp(token,"bne") || !strcmp(token,"jsr") || !strcmp(token,"red") || !strcmp(token,"prn") || !strcmp(token,"rts") || !strcmp(token,"stop") )
-    return 1;
-
-  return 0;
-}
-
-/* check if a given string is a register */
-int isARegister(char line[]){
-  move_to_none_white(line, 0);
-  /* trimTrailing(line); */ /* created segmention fault */
-  if(!strcmp(line,"r0"))
-    return 0;  
-  if(!strcmp(line,"r1"))
-    return 1;
-  if(!strcmp(line,"r2"))
-    return 2;  
-  if(!strcmp(line,"r3"))
-    return 3;
-  if(!strcmp(line,"r4"))
-    return 4;  
-  if(!strcmp(line,"r5"))
-    return 5;
-  if(!strcmp(line,"r6"))
-    return 6;  
-  if(!strcmp(line,"r7"))
-    return 7;
-  if(!strcmp(line,"r8"))
-    return 8;  
-  if(!strcmp(line,"r9"))
-    return 9;
-  if(!strcmp(line,"r10"))
-    return 10;  
-  if(!strcmp(line,"r11"))
-    return 11;
-  if(!strcmp(line,"r12"))
-    return 12;  
-  if(!strcmp(line,"r13"))
-    return 13;
-  if(!strcmp(line,"r14"))
-    return 14;  
-  if(!strcmp(line,"r15"))
-    return 15;
-  
-  return -1;
-}
-
-/* check if a given string is a valid name */
-int isNameOk(char line []){
-  int i = 0;
-  if(!isalpha(line[i]) || isARegister(line) != -1 || isACommand(line) || strlen(line) > MAX_LABEL_LENGTH){
-    return 0;
-  }
-  while(line[i] != '\0'){
-    if(!isalpha(line[i]) && !isANaturalNum(line[i])){
-      return 0;
-    }
-    i++;
-  }
-  return 1;
-}
-
-/* need to solve the option of two identical macros */
 /* check if a given string is a valid macro */
 int checkForMacroAtSecond( LIST *names, char token[], int lineNumber ){
 
@@ -574,6 +378,7 @@ int checkForLabelAtBegining( LIST *names, char token[], int lineNumber ){
   }
   return 0;
 }
+
 
 /* insert macro */
 void insertMa(char token [], LIST* names){
@@ -689,9 +494,7 @@ int validOperands(char com [], char firstOp [], char secondOp [], LIST *names){
   
   /* op2 = 1,2,3 */
   if(!strcmp(com,"mov") || !strcmp(com,"add") || !strcmp(com,"sub") ||!strcmp(com,"lea")){
-    /* problem if there is invalid label as operand */
     
-    //printf("com = %s\t op1 = %d\top2 = %d\n",com,op1,op2);
     if(op2 != 0 && op2 != -1){
       res2 = 1;
     }
