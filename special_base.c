@@ -1,19 +1,17 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <ctype.h>
-char binToHex(char num []);
-char* binToSpecial (char num [],int i);
 
 
-char* binToSpecial (char num [],int address){
-  char num1 [] = "0000";
-  char num2 [] = "0000";
-  char num3 [] = "0000";
-  char num4 [] = "0000";
-  char num5 [] = "0000";
+char binToHex(int num []);
+
+/* a func to get the num in he special base specified */
+void binToSpecial (int num [],int address,FILE* output){
+  int num1 [] = {0,0,0,0};
+  int num2 [] = {0,0,0,0};
+  int num3 [] = {0,0,0,0};
+  int num4 [] = {0,0,0,0};
+  int num5 [] = {0,0,0,0};
   int i,j;
+  char a, b, c, d, e;
   int count = 0;
   for(i=0; i<5; i++){
     for(j=0;j<4;j++){
@@ -30,54 +28,51 @@ char* binToSpecial (char num [],int address){
       count++;
     }
   }
-  char a = binToHex(num1);
-  char b = binToHex(num2);
-  char c = binToHex(num3);
-  char d = binToHex(num4);
-  char e = binToHex(num5);
-
-  /*printf("num = %s\n",num); */
- /*  printf("num1 = %s\nnum2 = %s\nnum3 = %s\nnum4 = %s\nnum5 = %s\n",num,num1,num2,num3,num4,num5); */
-  if(i < 1000)
-    printf("0%d\tA%c-B%c-C%c-D%c-E%c\n",address,a,b,c,d,e);
+  a = binToHex(num1);
+  b = binToHex(num2);
+  c = binToHex(num3);
+  d = binToHex(num4);
+  e = binToHex(num5);
+  if(address < 1000)
+    fprintf(output, "0%d\tA%c-B%c-C%c-D%c-E%c\n", address, e, d, c, b, a);
   else{
-    printf("%d\tA%c-B%c-C%c-D%c-E%c\n",address,a,b,c,d,e);
+    fprintf(output, "%d\tA%c-B%c-C%c-D%c-E%c\n", address, e, d, c, b, a);
   }
-  return ("A%c-B%c-C%c-D%c-E%c\n",a,b,c,d,e); 
 }
 
-
-char binToHex(char num []){
-  if(!strcmp(num,"0000"))
+/*a func to convert a num in binary to hex base*/
+char binToHex(int num []){
+  if(num[3] == 0 && num[2] == 0 && num[1] == 0 && num[0] == 0) 
     return '0';
-  if(!strcmp(num,"0001"))
-    return '1';  
-  if(!strcmp(num,"0010"))
+  if(num[3] == 0 && num[2] == 0 && num[1] == 0 && num[0] == 1)
+    return '1';
+  if(num[3] == 0 && num[2] == 0 && num[1] == 1 && num[0] == 0)
     return '2';
-  if(!strcmp(num,"0011"))
+  if(num[3] == 0 && num[2] == 0 && num[1] == 1 && num[0] == 1)
     return '3';
-  if(!strcmp(num,"0100"))
+  if(num[3] == 0 && num[2] == 1 && num[1] == 0 && num[0] == 0)
     return '4';
-  if(!strcmp(num,"0101"))
+  if(num[3] == 0 && num[2] == 1 && num[1] == 0 && num[0] == 1)
     return '5';
-  if(!strcmp(num,"0110"))
+  if(num[3] == 0 && num[2] == 1 && num[1] == 1 && num[0] == 0)
     return '6';
-  if(!strcmp(num,"0111"))
+  if(num[3] == 0 && num[2] == 1 && num[1] == 1 && num[0] == 1)
     return '7';
-  if(!strcmp(num,"1000"))
+  if(num[3] == 1 && num[2] == 0 && num[1] == 0 && num[0] == 0)
     return '8';
-  if(!strcmp(num,"1001"))
+  if(num[3] == 1 && num[2] == 0 && num[1] == 0 && num[0] == 1)
     return '9';
-  if(!strcmp(num,"1010"))
+  if(num[3] == 1 && num[2] == 0 && num[1] == 1 && num[0] == 0)
     return 'a';
-  if(!strcmp(num,"1011"))
+  if(num[3] == 1 && num[2] == 0 && num[1] == 1 && num[0] == 1)
     return 'b';
-  if(!strcmp(num,"1100"))
-    return 'c';  
-  if(!strcmp(num,"1101"))
-    return 'd';  
-  if(!strcmp(num,"1110"))
-    return 'e';  
-  if(!strcmp(num,"1111"))
-    return 'f';  
+  if(num[3] == 1 && num[2] == 1 && num[1] == 0 && num[0] == 0)
+    return 'c';
+  if(num[3] == 1 && num[2] == 1 && num[1] == 0 && num[0] == 1)
+    return 'd';
+  if(num[3] == 1 && num[2] == 1 && num[1] == 1 && num[0] == 0)
+    return 'e';
+  if(num[3] == 1 && num[2] == 1 && num[1] == 1 && num[0] == 1)
+    return 'f';
+  return '\0';
 }
