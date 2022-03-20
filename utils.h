@@ -10,16 +10,7 @@ typedef struct commandsStruct{
     int opcode;
     int funct;
     int numOfParam;
-    /*char** sourceAble;  legit source functions */
-    /*char** destAble;    legit destination functions */
-     
 }commandsStruct;
-
-typedef struct commandData{
-    char name[10];
-    int valid;
-    int bytes;
-}commandData;
 
 typedef struct MACRO
 {
@@ -45,13 +36,8 @@ typedef struct WORD
     WORD *next;
 }WORD;
 
-typedef struct LINE
-{
-    WORD *wordHead;
-    LINE *next;
-}LINE;
-
 struct MACRO *head = NULL;
+
 int move_to_none_white(char line[], int i);
 int skip(char line[]);
 void preProcessing(FILE *fileName, char *nameOfFile);
@@ -65,7 +51,6 @@ int isACommand(char []);
 int isANaturalNum(char);
 int giveTheLastNoneWhiteIndex(char line[]);
 int countWords(char line []);
-
 
 symbolLink * symboleTableCreat(FILE *filePointer);
 symbolLink *pushLable(symbolLink *head, char lableName[]);
