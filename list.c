@@ -1,5 +1,6 @@
 #include "list.h"
 
+/* insert node a list */
 void insert(LIST *l,char input []){
   NODE *p = (NODE*)malloc(sizeof(NODE));
   char *value  = (char*)malloc(sizeof(char)*(strlen(input)+1));
@@ -14,10 +15,11 @@ void insert(LIST *l,char input []){
   return;
 }
 
-int has(LIST *l ,char input []){
+/* check if a given list has a given node */
+int has(LIST *l ,char mystr[]){
   NODE *p = l->head;
   while(p != NULL){
-    if(!strcmp(p->val,input)){
+    if(!strcmp(p->val,mystr)){
       return 1;
     }
     p = p->next;
@@ -25,13 +27,14 @@ int has(LIST *l ,char input []){
   return 0;
 }
 
+/* create new list */
 LIST* newList(){
   LIST *l = (LIST*)malloc(sizeof(LIST));
   return l;
 }
+/* print the given list */
 void printList(LIST *l){
   NODE *p = l->head;
-  //printf("\nThe list %s is:",name);
   while(p != NULL){
     printf(" name: %s, mac: %d, ext: %d,  ent: %d, labDec: %d\n",p->val,p->mac,p->ext,p->ent,p->labDec);
     p = p->next;
@@ -39,6 +42,7 @@ void printList(LIST *l){
   printf("\n");
 }
 
+/* return a node by search his name in the list */
 NODE* getNode(LIST *l, char name[]){
   NODE *p = l->head;
   while(p != NULL){
@@ -50,56 +54,5 @@ NODE* getNode(LIST *l, char name[]){
   }
   return p;
 }
-
-
-/*
-int getMac(LIST *l,char name []){
-  NODE *p = l->head;
-  while(p != NULL){
-    //printf("%s\n",p->val);
-    if(!strcmp(p->val,name)){
-      return p->mac;
-    }
-    p = p->next;
-  }
-  return 0;
-}
-
-int getExt(LIST *l,char name []){
-  NODE *p = l->head;
-  while(p != NULL){
-    //printf("%s\n",p->val);
-    if(!strcmp(p->val,name)){
-      return p->mac;
-    }
-    p = p->ext;
-  }
-  return 0;
-}
-
-int getEnt(LIST *l,char name []){
-  NODE *p = l->head;
-  while(p != NULL){
-    //printf("%s\n",p->val);
-    if(!strcmp(p->val,name)){
-      return p->mac;
-    }
-    p = p->ent;
-  }
-  return 0;
-}
-
-int getLabDec(LIST *l,char name []){
-  NODE *p = l->head;
-  while(p != NULL){
-    //printf("%s\n",p->val);
-    if(!strcmp(p->val,name)){
-      return p->labDec;
-    }
-    p = p->ext;
-  }
-  return 0;
-}
-*/
 
 /* void freeList(LIST*) */
