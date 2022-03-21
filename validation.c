@@ -94,13 +94,15 @@ int validation(FILE *filePtr, LIST *names){
       
       /* .data */
       if( go && token != NULL){
+        int labelExists = 0;
         if( !strcmp(token,".data") ){
           go = 0;
           if(wordNumber == 1 || wordNumber == 2){
             int wordsInLine = countWords(line);
             
             if(wordNumber == 2){
-              wordsInLine--; /* for comparing it later to count commas */
+              labelExists = 1;
+              /*wordsInLine--;  for comparing it later to count commas */
             }
             
             while( token != NULL ){
@@ -116,10 +118,18 @@ int validation(FILE *filePtr, LIST *names){
                 result = 0;
               } 
             }
-            
-            if(!isValidCommas(wordsInLine-2,line)){
-              printf("line %d: invalid commas!\n", lineNumber);
-              result = 0;
+
+            if( labelExists ){
+              if(!isValidCommas(wordsInLine-3,line) ){
+                printf("line %d: invalid commas!\n", lineNumber);
+                result = 0;
+              }
+            }
+            else{
+              if(!isValidCommas(wordsInLine-2,line) ){
+                printf("line %d: invalid commas!\n", lineNumber);
+                result = 0;
+              }
             }
           }
         }
