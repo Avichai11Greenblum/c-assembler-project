@@ -204,25 +204,24 @@ int isLableDec(char *lable)
     return 0;
 }
 
-
+/* count how many words there is in a given string */
 int countWords(char line []){
   int i = 0, word = 0, inWord = 0;
 
   /* loop till end of string */
   while(line[i] != '\0'){
     
-    if(!isspace(line[i]) && inWord == 0){
+    if(!(isspace(line[i]) || line[i] == ',') && inWord == 0){
       word++;
       inWord = 1;
     }
-    if(isspace(line[i])){
+    if(isspace(line[i]) || line[i] == ',' ){
       inWord = 0;
     }
     i++;
   }
   return word;
 }
-
 
 /* delete white space in the end of a string */
 void trimTrailing(char * str){
