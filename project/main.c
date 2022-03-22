@@ -33,6 +33,7 @@ int chainFunctions(char * fileName){
   WORD *headOfFile = NULL;
   symbolLink *head;
 
+  printf("--- activating file %s ---\n", fileName);
   filePtr = fopen(fileName, "r");
   l = validNames(filePtr, fileName);
 
